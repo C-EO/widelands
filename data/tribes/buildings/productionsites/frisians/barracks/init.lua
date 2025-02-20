@@ -1,6 +1,6 @@
 push_textdomain("tribes")
 
-dirname = path.dirname (__file__)
+local dirname = path.dirname (__file__)
 
 wl.Descriptions():new_productionsite_type {
    name = "frisians_barracks",
@@ -66,6 +66,7 @@ wl.Descriptions():new_productionsite_type {
          -- TRANSLATORS: Completed/Skipped/Did not start recruiting soldier because ...
          descname = pgettext("frisians_building", "recruiting soldier"),
          actions = {
+            -- time total: 15 + 15 = 30 sec
             "return=skipped unless economy needs frisians_soldier",
             "consume=sword_short fur_garment frisians_carrier",
             "sleep=duration:15s",

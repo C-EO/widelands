@@ -1,6 +1,6 @@
 push_textdomain("tribes")
 
-dirname = path.dirname(__file__)
+local dirname = path.dirname(__file__)
 
 wl.Descriptions():new_productionsite_type {
    name = "atlanteans_sawmill",
@@ -54,9 +54,10 @@ wl.Descriptions():new_productionsite_type {
          -- TRANSLATORS: Completed/Skipped/Did not start sawing logs because ...
          descname = _("sawing logs"),
          actions = {
+            -- time total: 16.4 + 20 + 3.6 = 40 sec
             "return=skipped unless economy needs planks",
             "consume=log:2",
-            "sleep=duration:16s500ms", -- Much faster than Barbarians' wood hardener
+            "sleep=duration:16s400ms", -- Much faster than Barbarians' wood hardener
             "playsound=sound/atlanteans/saw/benchsaw priority:50% allow_multiple",
             "animate=working duration:20s", -- Much faster than Barbarians' wood hardener
             "produce=planks"

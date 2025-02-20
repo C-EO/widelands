@@ -1,6 +1,6 @@
 push_textdomain("tribes")
 
-dirname = path.dirname(__file__)
+local dirname = path.dirname(__file__)
 
 wl.Descriptions():new_productionsite_type {
    name = "atlanteans_quarry",
@@ -35,6 +35,10 @@ wl.Descriptions():new_productionsite_type {
          -- TRANSLATORS: Completed/Skipped/Did not start quarrying granite because ...
          descname = _("quarrying granite"),
          actions = {
+            -- time of worker: 25.7-50.9 sec, min+max average 38.3 sec
+            -- min. time total: 25.7 + 18.5 = 44.2 sec
+            -- max. time total: 50.9 + 18.5 = 69.4 sec
+            -- avg. time total: 38.3 + 18.5 = 56.8 sec
             "callworker=cut_granite",
             "sleep=duration:18s500ms"
          }

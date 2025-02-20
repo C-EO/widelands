@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2023 by the Widelands Development Team
+ * Copyright (C) 2006-2025 by the Widelands Development Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -128,6 +128,9 @@
 #define PRINTF_FORMAT(b, c)
 #endif
 
+#ifdef PRIuPTR
+#define PRIuS PRIuPTR
+#else
 #ifdef _WIN32
 #ifdef _WIN64
 #define PRIuS PRIu64
@@ -139,6 +142,7 @@
 #define PRIuS "lu"
 #else
 #define PRIuS "u"
+#endif
 #endif
 #endif
 

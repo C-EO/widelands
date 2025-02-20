@@ -1,6 +1,6 @@
 push_textdomain("tribes")
 
-dirname = path.dirname (__file__)
+local dirname = path.dirname (__file__)
 
 wl.Descriptions():new_militarysite_type {
    name = "amazons_treetop_sentry",
@@ -38,7 +38,7 @@ wl.Descriptions():new_militarysite_type {
 
    messages = {
       -- TRANSLATORS: Message sent by an Amazon military site
-      occupied = pgettext("amazons_building", "Your soldiers have occupied your treetop sentry."),
+      occupied = pgettext("amazons_building", "Your soldier has occupied your treetop sentry."),
       -- TRANSLATORS: Message sent by an Amazon military site
       aggressor = pgettext("amazons_building", "Your treetop sentry discovered an aggressor."),
       -- TRANSLATORS: Message sent by an Amazon military site

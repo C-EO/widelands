@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2002-2023 by the Widelands Development Team
+ * Copyright (C) 2002-2025 by the Widelands Development Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -24,12 +24,11 @@
 #include "ui_basic/button.h"
 #include "ui_basic/checkbox.h"
 #include "ui_basic/dropdown.h"
-#include "ui_basic/editbox.h"
 #include "ui_basic/icon.h"
-#include "ui_basic/multilineeditbox.h"
 #include "ui_basic/spinbox.h"
 #include "ui_basic/tabpanel.h"
 #include "ui_basic/textarea.h"
+#include "ui_basic/textinput.h"
 #include "ui_basic/unique_window.h"
 
 class EditorInteractive;
@@ -87,8 +86,6 @@ private:
 
 	std::vector<SuggestedTeamsEntry*> suggested_teams_entries_;
 	UI::Button new_suggested_team_;
-
-	UI::UniqueWindow::Registry& registry_;
 };
 
 struct SuggestedTeamsEntry : public UI::Panel {

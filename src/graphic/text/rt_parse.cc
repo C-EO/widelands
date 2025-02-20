@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2023 by the Widelands Development Team
+ * Copyright (C) 2006-2025 by the Widelands Development Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -576,8 +576,9 @@ Attributes
 * **object**: Show the representative image of a map object instead of using ``src``.
 * **ref**: To be implemented
 * **color**: Player color for the image as a hex value
-* **width**: Width of the image as a pixel amount.
+* **width**: Maximum width of the image as a pixel amount.
   The corresponding height will be matched automatically.
+  The image may only be scaled down, never up.
   Not supported in conjunction with the ``object`` parameter.
 
 :ref:`Return to tag index<rt_tags>`
