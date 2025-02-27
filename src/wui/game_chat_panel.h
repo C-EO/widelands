@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2023 by the Widelands Development Team
+ * Copyright (C) 2008-2025 by the Widelands Development Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -24,8 +24,14 @@
 #include "chat/chat.h"
 #include "ui_basic/box.h"
 #include "ui_basic/dropdown.h"
-#include "ui_basic/editbox.h"
 #include "ui_basic/multilinetextarea.h"
+#include "ui_basic/textinput.h"
+
+// Global input histories
+extern UI::EditBoxHistory g_chat_sent_history;
+extern UI::EditBoxHistory g_script_console_history;
+const std::string kChatSentHistoryFile = "sent_messages_history";
+const std::string kScriptConsoleHistoryFile = "script_console_history";
 
 /**
  * Provides a panel that contains chat message scrollbar and a chat message
@@ -39,6 +45,7 @@ struct GameChatPanel : public UI::Panel {
 	              uint32_t w,
 	              uint32_t h,
 	              ChatProvider&,
+	              UI::EditBoxHistory*,
 	              UI::PanelStyle style);
 
 	// Signal is called when a message has been sent by the user.
@@ -48,13 +55,14 @@ struct GameChatPanel : public UI::Panel {
 	Notifications::Signal<> aborted;
 
 	const std::string& get_edit_text() const {
-		return editbox.text();
+		return editbox.get_text();
 	}
 	void set_edit_text(const std::string& text) {
 		editbox.set_text(text);
 	}
 
 	bool handle_key(bool down, SDL_Keysym code) override;
+	bool handle_textinput(const std::string& text) override;
 	bool handle_mousepress(uint8_t btn, int32_t x, int32_t y) override;
 	void focus_edit();
 	void unfocus_edit();

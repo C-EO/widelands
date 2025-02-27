@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2023 by the Widelands Development Team
+ * Copyright (C) 2021-2025 by the Widelands Development Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -48,8 +48,11 @@ enum class MousewheelOptionID : uint16_t {
 	kEditorToolsizeMod,
 	kEditorToolsizeX,
 	kEditorToolsizeY,
+	kEditorToolgapMod,
+	kEditorToolgapX,
+	kEditorToolgapY,
 
-	k_End = kEditorToolsizeY,
+	k_End = kEditorToolgapY,
 
 	// This is used in update_mousewheel_settings() during the initialisation
 	// of WLApplication before SDL_Init() and the actual detection afterwards,
@@ -83,6 +86,7 @@ enum class MousewheelHandlerConfigID : uint16_t {
 	kMapScroll,
 	kGameSpeed,
 	kEditorToolsize,
+	kEditorToolgap,
 	kScrollbarVertical,  // Only vertical is used right now.
 	                     // Horizontal will have to be configurable, because we can't determine
 	                     // whether the hardware has 2D scrolling capability.

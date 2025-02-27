@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2002-2023 by the Widelands Development Team
+ * Copyright (C) 2002-2025 by the Widelands Development Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -35,7 +35,12 @@ int32_t EditorDecreaseResourcesTool::handle_click_impl(const Widelands::NodeAndT
 	const Widelands::Descriptions& descriptions = parent_.egbase().descriptions();
 	Widelands::MapRegion<Widelands::Area<Widelands::FCoords>> mr(
 	   *map, Widelands::Area<Widelands::FCoords>(map->get_fcoords(center.node), args->sel_radius));
+	auto gap_it = args->selection_gaps.cbegin();
 	do {
+		if (*gap_it++) {
+			continue;
+		}
+
 		Widelands::ResourceAmount amount = mr.location().field->get_resources_amount();
 
 		amount = (amount > args->change_by) ? amount - args->change_by : 0;

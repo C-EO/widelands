@@ -1,6 +1,6 @@
 push_textdomain("tribes")
 
-dirname = path.dirname(__file__)
+local dirname = path.dirname(__file__)
 
 wl.Descriptions():new_productionsite_type {
    name = "empire_mill",
@@ -66,9 +66,10 @@ wl.Descriptions():new_productionsite_type {
          -- TRANSLATORS: Completed/Skipped/Did not start grinding wheat because ...
          descname = _("grinding wheat"),
          actions = {
+            -- time total: 5.4 + 10 + 3.6 = 19 sec
             "return=skipped unless economy needs flour",
             "consume=wheat",
-            "sleep=duration:5s",
+            "sleep=duration:5s400ms",
             "playsound=sound/mill/mill_turning priority:90% allow_multiple",
             "animate=working duration:10s",
             "produce=flour"

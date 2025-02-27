@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2023 by the Widelands Development Team
+ * Copyright (C) 2021-2025 by the Widelands Development Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -115,8 +115,8 @@ struct MousewheelHandlerOptions {
 			   default_sign_x_ * (get_mousewheel_option_bool(invert_x_) ? -1 : 1) *
 			   (get_mousewheel_option_bool(MousewheelOptionID::kInvertedXDetected) !=
 			          get_mousewheel_option_bool(MousewheelOptionID::kOverrideInvertedX) ?
-                -1 :
-                1);
+			       -1 :
+			       1);
 		} else {
 			current_sign_x_ = 0;
 		}
@@ -177,6 +177,11 @@ static const std::map<MousewheelOptionID, MousewheelOption> mousewheel_options =
     MousewheelOption::create_mod("editor_toolsize_modifier", KMOD_ALT)},
    {MousewheelOptionID::kEditorToolsizeX, MousewheelOption::create_bool("editor_toolsize_x", true)},
    {MousewheelOptionID::kEditorToolsizeY, MousewheelOption::create_bool("editor_toolsize_y", true)},
+
+   {MousewheelOptionID::kEditorToolgapMod,
+    MousewheelOption::create_mod("editor_toolgap_modifier", KMOD_ALT)},
+   {MousewheelOptionID::kEditorToolgapX, MousewheelOption::create_bool("editor_toolgap_x", true)},
+   {MousewheelOptionID::kEditorToolgapY, MousewheelOption::create_bool("editor_toolgap_y", true)},
 
    {MousewheelOptionID::kAlwaysOn, MousewheelOption::create_bool("", true)},
    {MousewheelOptionID::kDisabled, MousewheelOption::create_bool("", false)},
@@ -249,6 +254,13 @@ static std::map<MousewheelHandlerConfigID, MousewheelHandlerOptions> mousewheel_
                              MousewheelOptionID::kEditorToolsizeX,
                              MousewheelOptionID::kUIChangeValueInvertX,
                              MousewheelOptionID::kEditorToolsizeY,
+                             MousewheelOptionID::kUIChangeValueInvertY,
+                             kDefaultSignValue)},
+   {MousewheelHandlerConfigID::kEditorToolgap,
+    MousewheelHandlerOptions(MousewheelOptionID::kEditorToolgapMod,
+                             MousewheelOptionID::kEditorToolgapX,
+                             MousewheelOptionID::kUIChangeValueInvertX,
+                             MousewheelOptionID::kEditorToolgapY,
                              MousewheelOptionID::kUIChangeValueInvertY,
                              kDefaultSignValue)},
    {MousewheelHandlerConfigID::kScrollbarVertical,  //

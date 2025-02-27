@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2023 by the Widelands Development Team
+ * Copyright (C) 2006-2025 by the Widelands Development Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -49,8 +49,6 @@
 #include "graphic/texture.h"
 #include "io/filesystem/filesystem_exceptions.h"
 #include "io/filesystem/layered_filesystem.h"
-
-#define CAN_OPEN_HYPERLINK (SDL_VERSION_ATLEAST(2, 0, 14))
 
 namespace {
 /**
@@ -1017,8 +1015,9 @@ public:
 	              const RGBColor& color,
 	              bool use_playercolor)
 	   : RenderNode(c, ns),
-	     image_(use_playercolor ? playercolor_image(color, image_filename) :
-                                 g_image_cache->get(image_filename)),
+	     image_(use_playercolor ?
+	               playercolor_image(color, image_filename) :
+	               g_image_cache->get(image_filename, true, ImageCache::kDefaultScaleIndex)),
 	     filename_(image_filename),
 	     scale_(scale),
 	     color_(color),
@@ -1410,8 +1409,9 @@ public:
 			SDL_SetClipboardText(target_.c_str());
 #endif
 			return true;
+		default:
+			NEVER_HERE();
 		}
-		NEVER_HERE();
 	}
 
 	[[nodiscard]] const std::string* get_tooltip(int32_t /* x */, int32_t /* y */) const override {
@@ -1468,7 +1468,8 @@ public:
 					         width, renderer_style_.overall_width, renderer_style_.overall_width);
 					width = renderer_style_.overall_width;
 				}
-				const int image_width = image_cache_->get(image_filename)->width();
+				const int image_width =
+				   image_cache_->get(image_filename, true, ImageCache::kDefaultScaleIndex)->width();
 				if (width < image_width) {
 					scale = static_cast<double>(width) / image_width;
 				}
@@ -1743,6 +1744,8 @@ public:
 					break;
 				case UI::Align::kLeft:
 					break;
+				default:
+					NEVER_HERE();
 				}
 			}
 		}

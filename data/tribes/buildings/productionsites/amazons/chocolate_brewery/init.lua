@@ -1,6 +1,6 @@
 push_textdomain("tribes")
 
-dirname = path.dirname (__file__)
+local dirname = path.dirname (__file__)
 
 wl.Descriptions():new_productionsite_type {
    name = "amazons_chocolate_brewery",
@@ -54,9 +54,10 @@ wl.Descriptions():new_productionsite_type {
          -- TRANSLATORS: Completed/Skipped/Did not start brewing chocolate because ...
          descname = _("brewing chocolate"),
          actions = {
+            -- time total: 30.4 + 30 + 3.6 = 64 sec
             "return=skipped unless economy needs chocolate",
             "consume=water:2 cocoa_beans",
-            "sleep=duration:30s",
+            "sleep=duration:30s400ms",
             "playsound=sound/empire/beerbubble priority:40% allow_multiple",
             "animate=working duration:30s",
             "produce=chocolate"

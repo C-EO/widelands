@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2023 by the Widelands Development Team
+ * Copyright (C) 2004-2025 by the Widelands Development Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -25,9 +25,9 @@
 #include "network/network_lan_promotion.h"
 #include "ui_basic/box.h"
 #include "ui_basic/button.h"
-#include "ui_basic/editbox.h"
 #include "ui_basic/table.h"
 #include "ui_basic/textarea.h"
+#include "ui_basic/textinput.h"
 #include "ui_fsmenu/menu.h"
 namespace FsMenu {
 class NetSetupLAN : public TwoColumnsBasicNavigationMenu {
@@ -81,8 +81,9 @@ private:
 	UI::Button loadlasthost_;
 
 	UI::Button joingame_, hostgame_;
+	bool valid_playername_{false};
 
-	LanGameFinder discovery_;
+	std::unique_ptr<LanGameFinder> discovery_;
 };
 }  // namespace FsMenu
 #endif  // end of include guard: WL_UI_FSMENU_NETSETUP_LAN_H

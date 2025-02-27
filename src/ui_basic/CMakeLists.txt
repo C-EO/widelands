@@ -6,7 +6,6 @@ wl_library(ui_basic_loading_message
     notifications
 )
 
-
 wl_library(ui_basic
   SRCS
     box.cc
@@ -19,8 +18,6 @@ wl_library(ui_basic
     color_chooser.h
     dropdown.cc
     dropdown.h
-    editbox.cc
-    editbox.h
     fileview_panel.cc
     fileview_panel.h
     icon.cc
@@ -32,8 +29,6 @@ wl_library(ui_basic
     messagebox.cc
     messagebox.h
     mouse_constants.h
-    multilineeditbox.cc
-    multilineeditbox.h
     multilinetextarea.cc
     multilinetextarea.h
     panel.cc
@@ -56,6 +51,8 @@ wl_library(ui_basic
     tabpanel.h
     textarea.cc
     textarea.h
+    textinput.cc
+    textinput.h
     text_prompt.cc
     text_prompt.h
     toolbar_setup.cc
@@ -71,8 +68,8 @@ wl_library(ui_basic
     base_exceptions
     base_geometry
     base_macros
+    base_math
     base_random
-    base_scoped_timer
     base_utf8
     graphic
     graphic_align
@@ -86,6 +83,7 @@ wl_library(ui_basic
     graphic_text
     graphic_text_layout
     graphic_wordwrap
+    io_fileread
     io_filesystem
     notifications
     scripting_lua_interface

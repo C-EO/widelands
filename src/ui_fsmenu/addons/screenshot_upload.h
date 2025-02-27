@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2023 by the Widelands Development Team
+ * Copyright (C) 2021-2025 by the Widelands Development Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -24,10 +24,10 @@
 #include "logic/addons.h"
 #include "ui_basic/box.h"
 #include "ui_basic/button.h"
-#include "ui_basic/editbox.h"
 #include "ui_basic/icon.h"
 #include "ui_basic/listselect.h"
 #include "ui_basic/textarea.h"
+#include "ui_basic/textinput.h"
 #include "ui_basic/window.h"
 
 namespace AddOnsUI {
