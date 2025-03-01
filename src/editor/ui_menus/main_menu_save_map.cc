@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2002-2023 by the Widelands Development Team
+ * Copyright (C) 2002-2025 by the Widelands Development Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -50,7 +50,7 @@ MainMenuSaveMap::MainMenuSaveMap(EditorInteractive& parent,
                                  UI::UniqueWindow::Registry& registry,
                                  Registry& map_options_registry)
    : MainMenuLoadOrSaveMap(
-        parent, registry, "save_map_menu", _("Save Map"), false, true, "maps/My_Maps"),
+        parent, registry, "save_map_menu", _("Save Map"), false, true, kMyMapsDirFull),
      map_options_registry_(map_options_registry),
      edit_options_(&map_details_box_,
                    "edit_options",
@@ -62,13 +62,14 @@ MainMenuSaveMap::MainMenuSaveMap(EditorInteractive& parent,
                    _("Map Options")),
      editbox_label_(&table_footer_box_,
                     UI::PanelStyle::kWui,
+                    "label_filename",
                     UI::FontStyle::kWuiLabel,
                     0,
                     0,
                     0,
                     0,
                     _("Filename:")),
-     editbox_(&table_footer_box_, 0, 0, 0, UI::PanelStyle::kWui),
+     editbox_(&table_footer_box_, "editbox", 0, 0, 0, UI::PanelStyle::kWui),
      make_directory_(&table_footer_box_,
                      "make_directory",
                      0,
@@ -125,7 +126,7 @@ void MainMenuSaveMap::clicked_ok() {
 	if (!ok_.enabled()) {
 		return;
 	}
-	std::vector<std::string> filename = {editbox_.text()};
+	std::vector<std::string> filename = {editbox_.get_text()};
 	std::vector<std::string> complete_filename;
 
 	if (filename.empty() && table_.has_selection()) {  //  Maybe a directory is selected.
@@ -144,8 +145,8 @@ void MainMenuSaveMap::clicked_ok() {
 			std::string::size_type const filename_size = filename.at(0).size();
 			map->set_name(4 <= filename_size &&
 			                    ends_with(filename.at(0), kWidelandsMapExtension, false) ?
-                          filename.at(0).substr(0, filename_size - 4) :
-                          filename.at(0));
+			                 filename.at(0).substr(0, filename_size - 4) :
+			                 filename.at(0));
 		}
 		if (save_map(filename.at(0), !get_config_bool("nozip", false))) {
 			die();
@@ -198,6 +199,10 @@ void MainMenuSaveMap::clicked_make_directory() {
 
 void MainMenuSaveMap::clicked_edit_options() {
 	map_options_registry_.create();
+	// Make sure the map options window is always on top of us
+	assert(map_options_registry_.window != nullptr);
+	map_options_registry_.window->set_z(
+	   static_cast<UI::Panel::ZOrder>(static_cast<int>(get_z()) + 1));
 }
 
 void MainMenuSaveMap::update_map_options() {
@@ -213,12 +218,12 @@ void MainMenuSaveMap::update_map_options() {
 		maptype = MapData::MapType::kNormal;
 	}
 
-	MapData mapdata(map, editbox_.text(), maptype, MapData::DisplayType::kMapnames);
+	MapData mapdata(map, editbox_.get_text(), maptype, MapData::DisplayType::kMapnames);
 
 	// TODO(GunChleoc): Trying to render the minimap while saving results in endless loop - probably
 	// because we're trying to load the map again there.
 	map_details_.update(mapdata, false, false);
-	if (old_name == editbox_.text()) {
+	if (old_name == editbox_.get_text()) {
 		editbox_.set_text(map_details_.name());
 		edit_box_changed();
 	}
@@ -258,13 +263,13 @@ void MainMenuSaveMap::double_clicked_item() {
  */
 void MainMenuSaveMap::edit_box_changed() {
 	// Prevent the user from creating nonsense file names, like e.g. ".." or "...".
-	const bool is_legal_filename = FileSystemHelper::is_legal_filename(editbox_.text());
+	const bool is_legal_filename = FileSystemHelper::is_legal_filename(editbox_.get_text());
 	ok_.set_enabled(is_legal_filename);
 	editbox_.set_tooltip(is_legal_filename ? "" : illegal_filename_tooltip_);
 }
 
 void MainMenuSaveMap::reset_editbox_or_die(const std::string& current_filename) {
-	if (editbox_.text() == current_filename) {
+	if (editbox_.get_text() == current_filename) {
 		die();
 	} else {
 		editbox_.set_text(current_filename);

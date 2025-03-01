@@ -1,6 +1,6 @@
 push_textdomain("tribes")
 
-dirname = path.dirname(__file__)
+local dirname = path.dirname(__file__)
 
 wl.Descriptions():new_productionsite_type {
    name = "empire_tavern",
@@ -70,10 +70,10 @@ wl.Descriptions():new_productionsite_type {
          -- TRANSLATORS: Completed/Skipped/Did not start preparing a ration because ...
          descname = _("preparing a ration"),
          actions = {
-            -- time total: 33
+            -- time total: 5.4 + 18 + 10 + 3.6 = 37 sec
             "return=skipped unless economy needs ration",
             "consume=empire_bread,fish,meat",
-            "sleep=duration:5s",
+            "sleep=duration:5s400ms",
             "playsound=sound/empire/taverns/ration priority:80%",
             "animate=working duration:18s",
             "sleep=duration:10s",

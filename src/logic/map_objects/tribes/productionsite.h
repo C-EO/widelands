@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2002-2023 by the Widelands Development Team
+ * Copyright (C) 2002-2025 by the Widelands Development Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -22,16 +22,20 @@
 #include <memory>
 
 #include "base/macros.h"
+#include "logic/map.h"
 #include "logic/map_objects/tribes/bill_of_materials.h"
 #include "logic/map_objects/tribes/building.h"
 #include "logic/map_objects/tribes/production_program.h"
 #include "logic/map_objects/tribes/program_result.h"
+#include "logic/map_objects/tribes/worker.h"
+#include "logic/map_objects/tribes/worker_descr.h"
 #include "scripting/lua_table.h"
 
 namespace Widelands {
 
+class FerryFleetYardInterface;
+class ShipFleetYardInterface;
 class Soldier;
-class WorkerDescr;
 
 enum class FailNotificationType { kDefault, kFull };
 
@@ -194,6 +198,13 @@ public:
 		is_infinite_production_useful_ = u;
 	}
 
+	[[nodiscard]] bool has_ship_fleet_check() const {
+		return has_ship_fleet_check_;
+	}
+	[[nodiscard]] bool has_ferry_fleet_check() const {
+		return has_ferry_fleet_check_;
+	}
+
 	[[nodiscard]] const std::string& out_of_resource_title() const {
 		return out_of_resource_title_;
 	}
@@ -310,12 +321,15 @@ private:
 	std::set<std::string> competing_productionsites_;
 	std::set<std::string> supported_productionsites_;
 	std::set<std::string> supported_by_productionsites_;
+	bool has_ship_fleet_check_{false};
+	bool has_ferry_fleet_check_{false};
 
 	DISALLOW_COPY_AND_ASSIGN(ProductionSiteDescr);
 };
 
 class ProductionSite : public Building {
 	friend class MapBuildingdataPacket;
+	// TODO(Nordfriese): Refactor this. Many friend classes are bad style.
 	friend struct ProductionProgram::ActReturn;
 	friend struct ProductionProgram::ActReturn::WorkersNeedExperience;
 	friend struct ProductionProgram::ActCall;
@@ -329,6 +343,7 @@ class ProductionSite : public Building {
 	friend struct ProductionProgram::ActCheckSoldier;
 	friend struct ProductionProgram::ActTrain;
 	friend struct ProductionProgram::ActPlaySound;
+	friend struct ProductionProgram::ActRunScript;
 	friend struct ProductionProgram::ActConstruct;
 	MO_DESCR(ProductionSiteDescr)
 
@@ -426,10 +441,20 @@ public:
 	}
 	void set_infinite_production(bool);
 
+	[[nodiscard]] const std::vector<ShipFleetYardInterface*>& get_ship_fleet_interfaces() const {
+		return ship_fleet_interfaces_;
+	}
+	[[nodiscard]] const std::vector<FerryFleetYardInterface*>& get_ferry_fleet_interfaces() const {
+		return ferry_fleet_interfaces_;
+	}
+	void remove_fleet_interface(EditorGameBase& egbase, const ShipFleetYardInterface* i);
+	void remove_fleet_interface(EditorGameBase& egbase, const FerryFleetYardInterface* i);
+
 protected:
 	void update_statistics_string(std::string* statistics) override;
 
 	void load_finish(EditorGameBase& egbase) override;
+	void postload(EditorGameBase& egbase) override;
 
 	struct State {
 		const ProductionProgram* program{nullptr};  ///< currently running program
@@ -484,6 +509,7 @@ protected:
 	                   MapObject* extra_data = nullptr);
 	virtual void program_end(Game&, ProgramResult);
 	virtual void train_workers(Game&);
+	void init_yard_interfaces(EditorGameBase& egbase);
 
 	void format_statistics_string();
 	void try_start_working(Game&);
@@ -521,6 +547,11 @@ protected:
 	bool is_stopped_{false};
 	bool infinite_production_{false};
 	std::string default_anim_{"idle"};  // normally "idle", "empty", if empty mine.
+
+	std::vector<ShipFleetYardInterface*> ship_fleet_interfaces_;
+	std::vector<FerryFleetYardInterface*> ferry_fleet_interfaces_;
+	std::unique_ptr<Notifications::Subscriber<NoteFieldTerrainChanged>>
+	   field_terrain_changed_subscriber_;
 
 private:
 	enum class Trend { kUnchanged, kRising, kFalling };

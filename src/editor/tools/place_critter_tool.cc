@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2002-2023 by the Widelands Development Team
+ * Copyright (C) 2002-2025 by the Widelands Development Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -51,7 +51,12 @@ int32_t EditorPlaceCritterTool::handle_click_impl(const Widelands::NodeAndTriang
 		   *map,
 		   Widelands::Area<Widelands::FCoords>(map->get_fcoords(center.node), args->sel_radius));
 		std::list<const Widelands::BobDescr*>::iterator i = args->new_bob_type.begin();
+		auto gap_it = args->selection_gaps.cbegin();
 		do {
+			if (*gap_it++) {
+				continue;
+			}
+
 			const Widelands::BobDescr& descr = *(*i);
 			if ((mr.location().field->nodecaps() & descr.movecaps()) != 0u) {
 				if (Widelands::Bob* const bob = mr.location().field->get_first_bob()) {
@@ -76,7 +81,12 @@ int32_t EditorPlaceCritterTool::handle_undo_impl(
 		   *map,
 		   Widelands::Area<Widelands::FCoords>(map->get_fcoords(center.node), args->sel_radius));
 		std::list<const Widelands::BobDescr*>::iterator i = args->old_bob_type.begin();
+		auto gap_it = args->selection_gaps.cbegin();
 		do {
+			if (*gap_it++) {
+				continue;
+			}
+
 			if (*i != nullptr) {
 				const Widelands::BobDescr& descr = *(*i);
 				if ((mr.location().field->nodecaps() & descr.movecaps()) != 0u) {

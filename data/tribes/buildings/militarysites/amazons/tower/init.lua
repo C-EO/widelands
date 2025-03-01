@@ -1,6 +1,6 @@
 push_textdomain("tribes")
 
-dirname = path.dirname (__file__)
+local dirname = path.dirname (__file__)
 
 wl.Descriptions():new_militarysite_type {
    name = "amazons_tower",
@@ -15,7 +15,8 @@ wl.Descriptions():new_militarysite_type {
       enhancement_cost = {
          ironwood = 1,
          rope = 1,
-         balsa = 2
+         balsa = 2,
+         quartz = 1
       },
       enhancement_return_on_dismantle = {
          ironwood = 1,

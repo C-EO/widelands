@@ -19,7 +19,7 @@ An add-on contains a plain-text ini-style file called ``addons`` with the follow
 * ``description``: The long description
 * ``author``: The add-on’s author(s) name(s)
 * ``version``: The add-on’s version number
-* ``category``: One of "tribes", "world", "script", "maps", "map_generator", "campaign", "win_condition", "starting_condition", "theme"
+* ``category``: One of "tribes", "world", "script", "maps", "map_generator", "campaign", "win_condition", "starting_condition", "ui_plugin", "theme"
 * ``requires``: A comma-separated list of the filenames of add-ons required by this add-on.
 * ``min_wl_version`` *Optional*: The oldest Widelands version required by this add-on.
 * ``max_wl_version`` *Optional*: The newest Widelands version supported by this add-on.
@@ -53,6 +53,7 @@ Categories
 - `campaign`_
 - `win_condition`_
 - `starting_condition`_
+- `ui_plugin`_
 - `theme`_
 
 
@@ -140,9 +141,27 @@ A starting condition script. May define the same starting conditions for any num
 The add-on needs to contain one or more scripts called ``<tribename>.lua`` which must follow the same conventions as the files in ``data/tribes/initialization/<tribename>/starting_conditions/*.lua`` (see :doc:`autogen_lua_tribes_defining_discovery`).
 
 
+ui_plugin
+~~~~~~~~~
+A plugin for the graphical user interface. The add-on needs to contain a script called ``init.lua`` which will be run once upon creating the interactive game base or the editor. The script can then modify the user interface using the :doc:`UI scripting API <autogen_wl_ui>`.
+
+
 theme
 ~~~~~
 A UI theme. See :doc:`themes` for details.
+
+Keyboard Shortcuts
+------------------
+
+Since Widelands version 1.3, add-ons can define custom keyboard shortcuts. To do so, the add-on must create a script called ``shortcuts.lua`` in the add-on directory, which returns an :class:`array` of shortcut definition tables.
+
+Each shortcut definition :class:`table` contains the following keys:
+
+* ``internal_name``: The internal name of the shortcut, for use in scripts. If a shortcut with this name already exists, it will be replaced.
+* ``descname``: The human-readable, localized name of the shortcut.
+* ``scopes``: An :class:`array` of the scopes in which the shortcut is valid. This is used to detect clashes with other shortcuts. Valid scopes are ``"game"``, ``"editor"``, ``"main_menu"``, and ``"global"``. Each shortcut definition must have at least one scope.
+* ``keycode``: The default keyboard shortcut keycode name.
+* ``mods`` *Optional*: An :class:`array` of the modifiers keys in the default keyboard shortcut. Valid modifiers are ``"control"`` (also known as ``"ctrl"``), ``"shift"``, ``"alt"``, and ``"gui"`` (also known as ``"super"``, ``"meta"``, ``"cmd"``, ``"command"``, or ``"windows"``).
 
 
 Restrictions
@@ -200,7 +219,7 @@ The server keeps a repository of all add-on ``*.mo`` files which are automatical
 Uploading
 ---------
 
-The only supported way to upload an add-on is to use the in-game add-ons manager. Log in with your Widelands website user profile and online gaming password (i.e., the same credentials as for the metaserver), and use the Upload section in the add-ons manager’s third tab. If you previously submitted an add-on with the same name and lower version number, the new upload will be made available as an upgrade. You can upload screenshots for your add-ons in the same way.
+The only supported way to upload an add-on is to use the in-game add-ons manager. Log in with your Widelands website user profile and online gaming password (i.e., the same credentials as for the metaserver), and use the Upload section in the add-ons manager’s last tab. If you previously submitted an add-on with the same name and lower version number, the new upload will be made available as an upgrade. You can upload screenshots for your add-ons in the same way.
 
 When providing an upgrade, always ensure that your modifications are based on the version that was downloaded from the server rather than your original sources, as the maintainers may make minor maintenance modifications to the versions stored there.
 
@@ -211,3 +230,10 @@ By uploading, you agree to publish your creation under the terms of the GNU Gene
 You can only upload upgrades and screenshots for your own add-ons (unless you are a server administrator).
 
 If you run into problems (e.g. the server refuses to accept an upload) or have advanced needs such as deletion of your add-ons or collaborating on someone else’s add-on, you can also ask in the Widelands forum under https://www.widelands.org/forum/topic/5073/.
+
+Website Maps
+------------
+
+Website maps are also made available for download through the add-ons manager. They are not, however, packaged as add-ons, nor stored on the add-ons server, but rather passed through as raw WMF files from the website's archive.
+Downloaded website maps are stored in the ‘maps/Downloaded’ directory under the Widelands home directory, just like manually downloaded maps should be.
+Translations and server database integration (comments, ratings, download counter) are not yet implemented for website maps.
