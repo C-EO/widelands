@@ -1,6 +1,6 @@
 push_textdomain("tribes")
 
-dirname = path.dirname(__file__)
+local dirname = path.dirname(__file__)
 
 wl.Descriptions():new_warehouse_type {
    name = "empire_headquarters",
@@ -24,6 +24,7 @@ wl.Descriptions():new_warehouse_type {
 
    heal_per_second = 220,
    conquers = 9,
+   max_garrison = 20,
 }
 
 pop_textdomain()

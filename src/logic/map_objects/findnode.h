@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2023 by the Widelands Development Team
+ * Copyright (C) 2008-2025 by the Widelands Development Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -89,6 +89,12 @@ public:
 	}
 };
 
+struct FindNodeAlwaysTrue {
+	[[nodiscard]] bool accept(const EditorGameBase&, const FCoords&) const {
+		return true;
+	}
+};
+
 struct FindNodeCaps {
 	explicit FindNodeCaps(uint8_t init_mincaps) : mincaps(init_mincaps) {
 	}
@@ -138,6 +144,29 @@ struct FindNodeSize {
 
 private:
 	Size size;
+};
+
+/// Accepts a node based on its ownership.
+struct FindNodeOwned {
+	explicit FindNodeOwned(PlayerNumber owner) : owner_(owner) {
+	}
+	[[nodiscard]] bool accept(const EditorGameBase& egbase, const FCoords& coords) const;
+
+private:
+	PlayerNumber owner_;
+};
+
+/// Accepts a free node with free space all around it.
+/// If landbased_ is false, the behaviour is modified to instead accept the node
+/// only if *at least one* adjacent triangle has MOVECAPS_SWIM.
+struct FindNodeSpace {
+	explicit FindNodeSpace(bool land) : landbased_(land) {
+	}
+
+	[[nodiscard]] bool accept(const EditorGameBase& egbase, const FCoords& coords) const;
+
+private:
+	bool landbased_;
 };
 
 /// Accepts a node based on the size of the immovable there (if any).
@@ -211,5 +240,17 @@ private:
 	// Minimal number of reachable swimmable fields. 1 is minimum for this to be considered "shore"
 	uint16_t min_fields;
 };
+
+/** Accepts a node if and only if a ferry can reach it or depart from there. */
+struct FindNodeFerry {
+	explicit FindNodeFerry(PlayerNumber p) : player_who_needs_ferry_(p) {
+	}
+
+	[[nodiscard]] bool accept(const EditorGameBase& egbase, const FCoords& coords) const;
+
+private:
+	const PlayerNumber player_who_needs_ferry_;
+};
+
 }  // namespace Widelands
 #endif  // end of include guard: WL_LOGIC_FINDNODE_H

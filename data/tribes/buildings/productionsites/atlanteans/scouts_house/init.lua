@@ -1,6 +1,6 @@
 push_textdomain("tribes")
 
-dirname = path.dirname(__file__)
+local dirname = path.dirname(__file__)
 
 wl.Descriptions():new_productionsite_type {
    name = "atlanteans_scouts_house",
@@ -49,6 +49,10 @@ wl.Descriptions():new_productionsite_type {
          -- TRANSLATORS: Completed/Skipped/Did not start scouting because ...
          descname = _("scouting"),
          actions = {
+            -- time of worker: 82.2-214.8 sec
+            -- min. time of one scouting: 30 + 82.2 = 112.2 sec
+            -- max. time of one scouting: 30 + 214.8 = 244.8 sec
+            -- avg. time of one scouting: (112.2 + 244.8) / 2 = 178.5 sec
             "consume=smoked_fish",
             "sleep=duration:30s",
             "callworker=scout",

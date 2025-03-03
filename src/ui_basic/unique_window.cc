@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2002-2023 by the Widelands Development Team
+ * Copyright (C) 2002-2025 by the Widelands Development Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -72,6 +72,20 @@ void UniqueWindow::Registry::toggle() {
 }
 
 /**
+ * Does the window exist? (may be open or minimal)
+ */
+bool UniqueWindow::Registry::exists() const {
+	return window != nullptr;
+}
+
+/**
+ * Is the window open? (not minimal)
+ */
+bool UniqueWindow::Registry::is_open() const {
+	return window != nullptr && !window->is_minimal();
+}
+
+/**
  * In order to avoid dangling pointers, we need to kill our contained window
  * here.
  */
@@ -111,6 +125,7 @@ UniqueWindow::UniqueWindow(Panel* const parent,
 	if (registry_ != nullptr) {
 		delete registry_->window;
 		registry_->window = this;
+		set_pinned(registry_->pinned);
 		if (registry_->valid_pos) {
 			set_pos(Vector2i(registry_->x, registry_->y));
 			usedefaultpos_ = false;
@@ -139,6 +154,7 @@ void UniqueWindow::save_position() {
 		registry_->x = get_x();
 		registry_->y = get_y();
 		registry_->valid_pos = true;
+		registry_->pinned = is_pinned();
 	}
 }
 
@@ -156,19 +172,22 @@ void UniqueWindow::move_inside_parent() {
 		return;
 	}
 
-	if (registry_->valid_pos) {
-		constexpr int32_t kMinVisible = 100;
+	// TODO(tothxa): needs refining to handle window size changes (e.g on tab switching)
+	/*
+	if (moved_by_user()) {
+	   constexpr int32_t kMinVisible = 100;
 
-		const bool top_visible = registry_->y < parent->get_inner_h() - kMinVisible;
-		const bool bottom_visible = registry_->y + get_h() > kMinVisible;
-		const bool left_visible = registry_->x < parent->get_inner_w() - kMinVisible;
-		const bool right_visible = registry_->x + get_w() > kMinVisible;
+	   const bool top_visible = registry_->y < parent->get_inner_h() - kMinVisible;
+	   const bool bottom_visible = registry_->y + get_h() > kMinVisible;
+	   const bool left_visible = registry_->x < parent->get_inner_w() - kMinVisible;
+	   const bool right_visible = registry_->x + get_w() > kMinVisible;
 
-		if (top_visible && bottom_visible && left_visible && right_visible) {
-			set_pos(Vector2i(registry_->x, registry_->y));
-			return;
-		}
+	   if (top_visible && bottom_visible && left_visible && right_visible) {
+	      set_pos(Vector2i(registry_->x, registry_->y));
+	      return;
+	   }
 	}
+	*/
 	Window::move_inside_parent();
 }
 

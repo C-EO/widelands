@@ -31,6 +31,9 @@
 --    **heal_per_second**
 --        *Mandatory*. The number of health points that a garrisoned soldier will heal each second.
 --
+--    **max_garrison**
+--        *Optional. Default:* ``0``. The maximum number of soldiers who can be garrisoned here.
+--
 --    **conquers**
 --        *Optional. Default:* ``0``. The conquer radius for this building.
 --
@@ -65,13 +68,14 @@
 --
 --       heal_per_second = 220,
 --       conquers = 9,
+--       max_garrison = 20,
 --    }
 --
 --    pop_textdomain()
 
 push_textdomain("tribes")
 
-dirname = path.dirname(__file__)
+local dirname = path.dirname(__file__)
 
 wl.Descriptions():new_warehouse_type {
    name = "atlanteans_headquarters",
@@ -92,6 +96,7 @@ wl.Descriptions():new_warehouse_type {
 
    heal_per_second = 220,
    conquers = 9,
+   max_garrison = 20,
 }
 
 pop_textdomain()

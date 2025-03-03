@@ -20,19 +20,19 @@ fi
 
 # Move up if we're not in the base directory.
 if [ -d "../utils" ]; then
-	pushd ..
+  pushd ..
 fi
 
 # Make sure 'utils/buildcat.py' is there.
 if [ ! -f "utils/buildcat.py" ]; then
-	echo "Unable to find 'utils/buildcat.py'."
-	echo "Make sure you start this script from Widelands' base or utils directory.";
-	exit 1
+  echo "Unable to find 'utils/buildcat.py'."
+  echo "Make sure you start this script from Widelands' base or utils directory.";
+  exit 1
 fi
 
 # Ensure that our git is clean
-rm -f po/*/*.pot.*~
-rm -f po/*/*.po.*~
+rm -f data/i18n/translations/*/*.pot.*~
+rm -f data/i18n/translations/*/*.po.*~
 
 if [ -n "$(git status -s)" ]; then
   echo "git status must be empty to prevent accidental commits etc."
@@ -43,9 +43,10 @@ fi
 # Checkout master and pull latest version
 git checkout master
 git pull "$push_target" master
+had_commit=''
 
 # Double-check that it's clean
-STATUS="$(git status)"
+STATUS="$(LANG=C git status)"
 echo "${STATUS}"
 if [[ "${STATUS}" != *"nothing to commit, working tree clean"* ]]; then
   echo "git status must be empty to prevent accidental commits etc."
@@ -54,86 +55,147 @@ fi
 
 echo "Working tree is clean, continuing"
 
+# -----------------------
+# functions:
+
+update_authors() {
+  # Update authors file
+  if python3 utils/update_authors.py; then
+    echo "Updated authors"
+  else
+    echo "Failed updating authors"
+    exit 1
+  fi
+  # Fix formatting for Lua
+  python3 utils/fix_formatting.py --lua --dir data/i18n
+  python3 utils/fix_formatting.py --lua --dir data/txts
+}
+
+update_appdata() {
+  # Update appdata
+  if python3 utils/update_appdata.py; then
+    echo "Updated appdata"
+  else
+    echo "Failed updating appdata"
+    exit 1
+  fi
+}
+
+update_statistics() {
+  # Update statistics
+  if python3 utils/update_translation_stats.py; then
+    echo "Updated translation stats"
+  else
+    echo "Failed to update translation stats"
+    exit 1
+  fi
+}
+
+gitAddGeneratedFiles() {
+  # Stage changes
+  # - Authors
+  git add 'data/txts/*.lua' || true
+  # - Locale data
+  git add 'data/i18n/*.lua' || true
+  # - Appdata
+  git add xdg/org.widelands.Widelands.appdata.xml xdg/org.widelands.Widelands.desktop || true
+  # - Statistics
+  git add data/i18n/translation_stats.conf || true
+}
+
+undo_oneliner_diffs() {
+  # Undo one-liner diffs of pure timestamps with no other content
+  set +x
+  for entry in $(git diff --numstat data/i18n/translations/ | sed -En 's/^1\t1\t//p'); do
+    if [ -z "$(git diff "$entry" | grep '^[+-][^+-]' | grep -v '^[+-]"POT-Creation-Date:')" ]
+    then # no other diff line remaining
+      echo "Skipping changes to $entry"
+      git checkout "$entry"
+    fi
+  done
+  set -x
+}
+
 # Print all commands.
 set -x
 
-# Pull translations from Transifex
-# tx pull -a
-# Force-pull translations because some would get skipped accidentally
-tx pull -fa
+# ------------------------------------------------
+# translations from transifex (*.po, *.json)
+# and changes from git (since last script run)
 
-# Update authors file
-python3 utils/update_authors.py
-if [ $? -eq 0 ] ; then
-  echo "Updated authors";
+# Pull All translations from Transifex
+# use force to make sure really all files get pulled
+tx pull -a -f
+
+# Undo one-liner diffs of pure timestamps with no other content
+# for fetched translations (*.po) (in case something plays tricks, see #5937)
+undo_oneliner_diffs
+
+# These may have changes either from git or from transifex
+update_authors
+update_appdata
+
+if [ -n "$(git status -s)" ]; then
+  update_statistics
+
+  # Stage translations
+  git add 'data/i18n/translations/*/*.po' 'data/i18n/locales/*.json' 'xdg/translations/*.json'
+  # and generated files
+  gitAddGeneratedFiles
+
+  # commit translations
+  git commit -m "Fetched translations and updated data."
+  had_commit=yes
 else
-  echo "Failed updating authors";
-  exit 1;
+  echo "No changes in translations and data."
 fi
 
-# Update appdata
-python3 utils/update_appdata.py
-if [ $? -eq 0 ] ; then
-  echo "Updated appdata";
-else
-  echo "Failed updating appdata";
-  exit 1;
-fi
+# -----------------------
+# Source catalogs:
 
-# Update catalogs
+# Update source catalogs
 python3 utils/buildcat.py
 
-# Update statistics
-python3 utils/update_translation_stats.py
-if [ $? -eq 0 ] ; then
-  echo "Updated translation stats";
+# Undo one-liner diffs of pure timestamps with no other content
+# for generated catalogs (*.pot)
+undo_oneliner_diffs
+
+if [ -n "$(git status -s)" ]; then
+  # Only upload to Transifex if anything changed
+  # Push source catalogs to Transifex
+  tx push -s
+  sleep 65 # wait for translation files to be updated
+
+  # Pull All translations from Transifex
+  # use force to make sure really all files get pulled
+  tx pull -a -f
+
+  # Undo one-liner diffs of pure timestamps with no other content
+  # for fetched translations (*.po) (in case something plays tricks, see #5937)
+  undo_oneliner_diffs
+
+  # in case translations were edited while this script was running
+  update_authors
+  update_appdata
+  # and this also changes by a catalog change
+  update_statistics
+
+  # Stage changes
+  # - Translations and templates
+  git add 'data/i18n/translations/*/*.po' 'data/i18n/translations/*/*.pot' 'data/i18n/locales/*.json' 'xdg/translations/*.json' || true
+  # - generated files
+  gitAddGeneratedFiles
+
+  # Commit
+  git commit -m "Updated translations catalogs and statistics."
+  had_commit=yes
 else
-  echo "Failed to update translation stats";
-  exit 1;
+  echo "No changes in translations catalogs."
 fi
 
-# Fix formatting for Lua
-python3 utils/fix_formatting.py --lua --dir data/i18n
-python3 utils/fix_formatting.py --lua --dir data/txts
-
-# Undo one-liner diffs in po directory - these are pure timestamps with no other content
-set +x
-nrAdded=""
-nrDeleted=""
-for entry in $(git diff --numstat po); do
-  if [ -z "$nrAdded" ]
-  then
-    nrAdded=$entry
-  elif [ -z "$nrDeleted" ]
-  then
-    nrDeleted=$entry
-  else
-    if [[ $nrAdded == 1 ]] && [[ $nrDeleted == 1 ]]
-    then
-      echo "Skipping changes to $entry"
-      git checkout $entry
-    fi
-    nrAdded=""
-    nrDeleted=""
-  fi
-done
-set -x
-
-# Stage changes
-# - Translations
-git add po/*/*.po po/*/*.pot data/i18n/locales/*.json xdg/translations/*.json || true
-# - Authors
-git add data/txts/*.lua || true
-# - Locale data
-git add data/i18n/*.lua || true
-# - Appdata
-git add xdg/org.widelands.Widelands.appdata.xml xdg/org.widelands.Widelands.desktop || true
-# - Statistics
-git add data/i18n/translation_stats.conf || true
-
-# Commit and push.
-git commit -m "Fetched translations and updated catalogs."
-git push "$push_target" master
-
-# Push catalogs to Transifex
-tx push -s
+if [ -n "$had_commit" ]; then # if a commit was created
+  # push fetched translations and updated catalogs
+  git push "$push_target" master
+else
+  echo "Nothing changed, skipped git push."
+fi

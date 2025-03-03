@@ -1,6 +1,6 @@
 push_textdomain("tribes")
 
-dirname = path.dirname(__file__)
+local dirname = path.dirname(__file__)
 
 wl.Descriptions():new_productionsite_type {
    name = "atlanteans_bakery",
@@ -56,9 +56,10 @@ wl.Descriptions():new_productionsite_type {
          -- TRANSLATORS: Completed/Skipped/Did not start baking bread because ...
          descname = pgettext("atlanteans_building", "baking bread"),
          actions = {
+            -- time total: 34.8 + 30 + 2 * 3.6 = 72 sec
             "return=skipped unless economy needs atlanteans_bread",
             "consume=water:2 blackroot_flour cornmeal",
-            "animate=working duration:35s",
+            "animate=working duration:34s800ms",
             "sleep=duration:30s",
             "produce=atlanteans_bread:2"
          }

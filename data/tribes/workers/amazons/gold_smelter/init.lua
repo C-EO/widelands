@@ -1,6 +1,6 @@
 push_textdomain("tribes")
 
-dirname = path.dirname (__file__)
+local dirname = path.dirname (__file__)
 
 wl.Descriptions():new_worker_type {
    name = "amazons_gold_smelter",
@@ -11,7 +11,8 @@ wl.Descriptions():new_worker_type {
 
    buildcost = {
       amazons_carrier = 1,
-      stone_bowl = 1
+      stone_bowl = 1,
+      firestones = 1,
    },
 
    animation_directory = dirname,

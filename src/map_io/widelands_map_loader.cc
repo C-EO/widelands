@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2002-2023 by the Widelands Development Team
+ * Copyright (C) 2002-2025 by the Widelands Development Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -206,7 +206,7 @@ int32_t WidelandsMapLoader::load_map_complete(EditorGameBase& egbase,
 	// PRELOAD DATA BEGIN
 	auto set_progress_message = [is_editor](const std::string& text, unsigned step) {
 		Notifications::publish(UI::NoteLoadingMessage(
-		   format(_("Loading map: %1$s (%2$u/%3$d)"), text, step, (is_editor ? 9 : 23))));
+		   format(_("Loading map: %1$s (%2$u/%3$d)"), text, step, (is_editor ? 9 : 24))));
 	};
 
 	set_progress_message(_("Elemental data"), 1);
@@ -373,11 +373,10 @@ int32_t WidelandsMapLoader::load_map_complete(EditorGameBase& egbase,
 		{
 			const Field& fields_end = map()[map().max_index()];
 			for (Field* field = &map()[0]; field < &fields_end; ++field) {
-				if (BaseImmovable* const imm = field->get_immovable()) {
-					if (upcast(Building const, building, imm)) {
-						if (field != &map()[building->get_position()]) {
-							continue;  //  not the building's main position
-						}
+				if (BaseImmovable* const imm = field->get_immovable(); imm != nullptr) {
+					if (imm->descr().type() >= MapObjectType::BUILDING &&
+					    field != &map()[dynamic_cast<Building*>(imm)->get_position()]) {
+						continue;  //  not the building's main position
 					}
 					imm->load_finish(egbase);
 				}
@@ -445,6 +444,23 @@ int32_t WidelandsMapLoader::load_map_complete(EditorGameBase& egbase,
 	map_.recalc_whole_map(egbase);
 
 	map_.ensure_resource_consistency(egbase.descriptions());
+
+	if (!is_editor) {
+		verb_log_info("Fourth phase loading Map Objects ... ");
+		set_progress_message(_("Postloading map objects"), 24);
+		{
+			const Field& fields_end = map()[map().max_index()];
+			for (Field* field = &map()[0]; field < &fields_end; ++field) {
+				if (BaseImmovable* const imm = field->get_immovable(); imm != nullptr) {
+					if (imm->descr().type() >= MapObjectType::BUILDING &&
+					    field != &map()[dynamic_cast<Building*>(imm)->get_position()]) {
+						continue;  //  not the building's main position
+					}
+					imm->postload(egbase);
+				}
+			}
+		}
+	}
 
 	set_state(State::kLoaded);
 

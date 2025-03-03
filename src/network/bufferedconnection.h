@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2023 by the Widelands Development Team
+ * Copyright (C) 2008-2025 by the Widelands Development Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -19,9 +19,11 @@
 #ifndef WL_NETWORK_BUFFEREDCONNECTION_H
 #define WL_NETWORK_BUFFEREDCONNECTION_H
 
+#include <deque>
 #include <map>
 #include <memory>
 #include <mutex>
+#include <queue>
 #include <thread>
 
 #include "network/network.h"
@@ -200,7 +202,7 @@ public:
 	 */
 	/*
 	 This method creates a vector to store the data-to-be-send in. Basically this template magic
-	 (called "parameter pack") is similar to the var-arg magic used by printf(). An arbitrary
+	 (called "parameter pack") is similar to the var-arg magic used by printf. An arbitrary
 	 number of arbitrary-typed parameters might be passed as the Fargs parameter. The compiler than
 	 decides which of the send_T_() methods have to be called. Since each of them takes a different
 	 first argument out of Fargs only one of them can match. The matching methods transforms the
