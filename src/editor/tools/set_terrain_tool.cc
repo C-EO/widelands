@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2023 by the Widelands Development Team
+ * Copyright (C) 2006-2025 by the Widelands Development Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -42,8 +42,8 @@ int32_t EditorSetTerrainTool::handle_click_impl(const Widelands::NodeAndTriangle
 		            radius));
 		do {
 			args->original_terrain_type.push_back((mr.location().t == Widelands::TriangleIndex::D) ?
-                                                  mr.location().node.field->terrain_d() :
-                                                  mr.location().node.field->terrain_r());
+			                                         mr.location().node.field->terrain_d() :
+			                                         mr.location().node.field->terrain_r());
 			args->terrain_type.push_back(get_random_enabled());
 		} while (mr.advance(*map));
 	}
@@ -55,7 +55,12 @@ int32_t EditorSetTerrainTool::handle_click_impl(const Widelands::NodeAndTriangle
 		               Widelands::FCoords(map->get_fcoords(center.triangle.node)), center.triangle.t),
 		            radius));
 		std::list<Widelands::DescriptionIndex>::iterator i = args->terrain_type.begin();
+		auto gap_it = args->selection_gaps.cbegin();
 		do {
+			if (*gap_it++) {
+				continue;
+			}
+
 			max = std::max(max, map->change_terrain(parent_.egbase(), mr.location(), *i));
 			++i;
 		} while (mr.advance(*map));
@@ -79,7 +84,12 @@ EditorSetTerrainTool::handle_undo_impl(const Widelands::NodeAndTriangle<Wideland
 		            radius));
 
 		std::list<Widelands::DescriptionIndex>::iterator i = args->original_terrain_type.begin();
+		auto gap_it = args->selection_gaps.cbegin();
 		do {
+			if (*gap_it++) {
+				continue;
+			}
+
 			max = std::max(max, map->change_terrain(parent_.egbase(), mr.location(), *i));
 			++i;
 		} while (mr.advance(*map));

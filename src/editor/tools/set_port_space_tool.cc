@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2002-2023 by the Widelands Development Team
+ * Copyright (C) 2002-2025 by the Widelands Development Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -59,7 +59,11 @@ int32_t EditorSetPortSpaceTool::handle_click_impl(const Widelands::NodeAndTriang
 
 	Widelands::MapRegion<Widelands::Area<Widelands::FCoords>> mr(
 	   *map, Widelands::Area<Widelands::FCoords>(map->get_fcoords(center.node), args->sel_radius));
+	auto gap_it = args->selection_gaps.cbegin();
 	do {
+		if (*gap_it++) {
+			continue;
+		}
 		//  check if field is valid
 		if (port_tool_nodecaps(mr.location(), *map) != Widelands::NodeCaps::CAPS_NONE) {
 			map->set_port_space(parent_.egbase(), mr.location(), true);
@@ -97,7 +101,11 @@ int32_t EditorUnsetPortSpaceTool::handle_click_impl(const Widelands::NodeAndTria
 
 	Widelands::MapRegion<Widelands::Area<Widelands::FCoords>> mr(
 	   *map, Widelands::Area<Widelands::FCoords>(map->get_fcoords(center.node), args->sel_radius));
+	auto gap_it = args->selection_gaps.cbegin();
 	do {
+		if (*gap_it++) {
+			continue;
+		}
 		//  check if field is valid
 		if (port_tool_nodecaps(mr.location(), *map) != 0u) {
 			map->set_port_space(parent_.egbase(), mr.location(), false);

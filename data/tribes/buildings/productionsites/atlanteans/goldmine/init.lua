@@ -1,6 +1,6 @@
 push_textdomain("tribes")
 
-dirname = path.dirname(__file__)
+local dirname = path.dirname(__file__)
 
 wl.Descriptions():new_productionsite_type {
    name = "atlanteans_goldmine",
@@ -52,9 +52,10 @@ wl.Descriptions():new_productionsite_type {
          -- TRANSLATORS: Completed/Skipped/Did not start mining gold because ...
          descname = _("mining gold"),
          actions = {
+            -- time total: 40.2 + 3 * (22 + 3.6) = 117 sec
             "return=skipped unless economy needs gold_ore",
             "consume=smoked_fish,smoked_meat:2 atlanteans_bread:2",
-            "sleep=duration:39s",
+            "sleep=duration:40s200ms",
             "call=mine_produce",
             "call=mine_produce",
             "call=mine_produce",

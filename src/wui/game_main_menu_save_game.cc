@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2002-2023 by the Widelands Development Team
+ * Copyright (C) 2002-2025 by the Widelands Development Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -66,8 +66,8 @@ GameMainMenuSaveGame::GameMainMenuSaveGame(InteractiveGameBase& parent,
 
      type_(type),
 
-     main_box_(this, UI::PanelStyle::kWui, 0, 0, UI::Box::Vertical),
-     info_box_(&main_box_, UI::PanelStyle::kWui, 0, 0, UI::Box::Horizontal),
+     main_box_(this, UI::PanelStyle::kWui, "main_box", 0, 0, UI::Box::Vertical),
+     info_box_(&main_box_, UI::PanelStyle::kWui, "info_box", 0, 0, UI::Box::Horizontal),
 
      load_or_save_(&info_box_,
                    igbase().game(),
@@ -76,9 +76,11 @@ GameMainMenuSaveGame::GameMainMenuSaveGame(InteractiveGameBase& parent,
                    UI::WindowStyle::kWui,
                    false),
 
-     filename_box_(load_or_save_.table_box(), UI::PanelStyle::kWui, 0, 0, UI::Box::Horizontal),
+     filename_box_(
+        load_or_save_.table_box(), UI::PanelStyle::kWui, "filename_box", 0, 0, UI::Box::Horizontal),
      filename_label_(&filename_box_,
                      UI::PanelStyle::kWui,
+                     "label_filename",
                      UI::FontStyle::kWuiLabel,
                      0,
                      0,
@@ -86,10 +88,11 @@ GameMainMenuSaveGame::GameMainMenuSaveGame(InteractiveGameBase& parent,
                      0,
                      _("Filename:"),
                      UI::Align::kLeft),
-     filename_editbox_(&filename_box_, 0, 0, 0, UI::PanelStyle::kWui),
+     filename_editbox_(&filename_box_, "filename", 0, 0, 0, UI::PanelStyle::kWui),
 
      buttons_box_(load_or_save_.game_details()->button_box(),
                   UI::PanelStyle::kWui,
+                  "buttons_box",
                   0,
                   0,
                   UI::Box::Horizontal),
@@ -104,6 +107,17 @@ GameMainMenuSaveGame::GameMainMenuSaveGame(InteractiveGameBase& parent,
 
 	main_box_.add_space(padding_);
 	main_box_.set_inner_spacing(padding_);
+
+	if (type_ == Type::kLoadReplay) {
+		show_filenames_ = new UI::Checkbox(
+		   &main_box_, UI::PanelStyle::kWui, "show_filenames", Vector2i::zero(), _("Show Filenames"));
+		main_box_.add(show_filenames_, UI::Box::Resizing::kFullSize);
+		main_box_.add_space(padding_);
+
+		show_filenames_->changed.connect([this]() { toggle_filenames(); });
+		show_filenames_->set_state(get_config_bool("display_replay_filenames", true));
+	}
+
 	main_box_.add(&info_box_, UI::Box::Resizing::kExpandBoth);
 
 	info_box_.set_inner_spacing(padding_);
@@ -138,7 +152,7 @@ GameMainMenuSaveGame::GameMainMenuSaveGame(InteractiveGameBase& parent,
 	load_or_save_.table().double_clicked.connect([this](unsigned /* index */) { ok(); });
 	load_or_save_.table().cancel.connect([this]() { die(); });
 
-	load_or_save_.fill_table();
+	fill_table();
 	load_or_save_.select_by_name(parent.game().save_handler().get_cur_filename());
 
 	center_to_parent();
@@ -172,14 +186,15 @@ void GameMainMenuSaveGame::entry_selected() {
 	if (load_or_save_.has_selection()) {
 		std::unique_ptr<SavegameData> gamedata = load_or_save_.entry_selected();
 		if (!gamedata->is_directory()) {
-			filename_editbox_.set_text(FileSystem::filename_without_ext(gamedata->filename.c_str()));
+			filename_editbox_.set_text(
+			   FileSystem::filename_without_ext(gamedata->filename.c_str()), false);
 		}
 	}
 }
 
 void GameMainMenuSaveGame::edit_box_changed() {
 	// Prevent the user from creating nonsense directory names, like e.g. ".." or "...".
-	const bool is_legal_filename = FileSystemHelper::is_legal_filename(filename_editbox_.text());
+	const bool is_legal_filename = FileSystemHelper::is_legal_filename(filename_editbox_.get_text());
 	ok_.set_enabled(is_legal_filename);
 	filename_editbox_.set_tooltip(is_legal_filename ? "" : illegal_filename_tooltip_);
 	load_or_save_.delete_button()->set_enabled(false);
@@ -187,12 +202,35 @@ void GameMainMenuSaveGame::edit_box_changed() {
 }
 
 void GameMainMenuSaveGame::reset_editbox_or_die(const std::string& current_filename) {
-	if (filename_editbox_.text() == current_filename) {
+	if (filename_editbox_.get_text() == current_filename) {
 		die();
 	} else {
-		filename_editbox_.set_text(current_filename);
+		filename_editbox_.set_text(current_filename, false);
 		load_or_save_.select_by_name(current_filename);
 	}
+}
+
+void GameMainMenuSaveGame::toggle_filenames() {
+	// TODO(Nordfriese): Duplicated code with FsMenu::LoadGame
+
+	showing_filenames_ = show_filenames_->get_state();
+	set_config_bool("display_replay_filenames", showing_filenames_);
+
+	// Remember selection
+	const std::set<uint32_t> selected = load_or_save_.table().selections();
+	// Fill table again
+	fill_table();
+
+	// Restore selection items
+	for (const uint32_t selectme : selected) {
+		load_or_save_.table().multiselect(selectme, true);
+	}
+	entry_selected();
+}
+
+void GameMainMenuSaveGame::fill_table() {
+	load_or_save_.set_show_filenames(showing_filenames_);
+	load_or_save_.fill_table();
 }
 
 void GameMainMenuSaveGame::ok() {
@@ -205,7 +243,11 @@ void GameMainMenuSaveGame::ok() {
 		if (gamedata->is_directory()) {
 			load_or_save_.change_directory_to(gamedata->filename);
 			curdir_ = gamedata->filename;
-			filename_editbox_.focus();
+			if (type_ == Type::kSave) {
+				filename_editbox_.focus();
+			} else {
+				load_or_save_.table().focus();
+			}
 			return;
 		}
 		if (type_ == Type::kLoadSavegame || type_ == Type::kLoadReplay) {
@@ -218,7 +260,7 @@ void GameMainMenuSaveGame::ok() {
 		}
 	}
 	if (type_ == Type::kSave) {
-		std::string filename = filename_editbox_.text();
+		std::string filename = filename_editbox_.get_text();
 		if (save_game(filename, !get_config_bool("nozip", false))) {
 			die();
 		} else {
@@ -303,7 +345,7 @@ bool GameMainMenuSaveGame::save_game(std::string filename, bool binary) {
 	   complete_filename, binary ? FileSystem::ZIP : FileSystem::DIR);
 	GenericSaveHandler::Error error;
 	{
-		MutexLock m(MutexLock::ID::kLogicFrame, [this]() { stay_responsive(); });
+		MutexLock m(MutexLock::ID::kLogicFrame);
 		error = gsh.save();
 	}
 

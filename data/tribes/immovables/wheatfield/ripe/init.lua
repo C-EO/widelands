@@ -1,6 +1,6 @@
 push_textdomain("tribes")
 
-dirname = path.dirname(__file__)
+local dirname = path.dirname(__file__)
 
 wl.Descriptions():new_immovable_type {
    name = "wheatfield_ripe",
@@ -22,9 +22,9 @@ wl.Descriptions():new_immovable_type {
    spritesheets = {
       idle = {
          frames = 5,
-         rows = 3,
-         columns = 2,
-         hotspot = { 31, 24 }
+         rows = 1,
+         columns = 5,
+         hotspot = { 36, 27 }
       },
    }
 }

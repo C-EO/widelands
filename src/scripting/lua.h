@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2023 by the Widelands Development Team
+ * Copyright (C) 2006-2025 by the Widelands Development Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -19,6 +19,7 @@
 #ifndef WL_SCRIPTING_LUA_H
 #define WL_SCRIPTING_LUA_H
 
+#include <cstdint>
 #include <string>
 
 #include "third_party/eris/lua.hpp"
@@ -36,5 +37,12 @@ void lua_pushstring(lua_State* L, const std::string& s);
 lua_State* luaL_checkthread(lua_State* L, int n);
 
 bool luaL_checkboolean(lua_State* L, int n);
+
+std::string get_table_string(lua_State* L,
+                             const char* key,
+                             bool mandatory,
+                             std::string default_value = std::string());
+int32_t get_table_int(lua_State* L, const char* key, bool mandatory, int32_t default_value = 0);
+bool get_table_boolean(lua_State* L, const char* key, bool mandatory, bool default_value = false);
 
 #endif  // end of include guard: WL_SCRIPTING_LUA_H

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012-2023 by the Widelands Development Team
+ * Copyright (C) 2012-2025 by the Widelands Development Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -45,6 +45,7 @@ struct EditorActionArgs {
 	~EditorActionArgs();
 
 	uint32_t sel_radius;
+	std::vector<bool> selection_gaps;
 
 	int32_t change_by{0};                                  // resources, change height tools
 	std::list<Widelands::Field::Height> original_heights;  // change height tool
