@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2002-2023 by the Widelands Development Team
+ * Copyright (C) 2002-2025 by the Widelands Development Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -22,9 +22,9 @@
 #include "ui_basic/box.h"
 #include "ui_basic/button.h"
 #include "ui_basic/checkbox.h"
-#include "ui_basic/editbox.h"
 #include "ui_basic/multilinetextarea.h"
 #include "ui_basic/textarea.h"
+#include "ui_basic/textinput.h"
 #include "ui_basic/unique_window.h"
 
 namespace FsMenu {
@@ -37,10 +37,10 @@ struct LoginBox : public UI::UniqueWindow {
 	void think() override;
 
 	std::string get_nickname() {
-		return eb_nickname_.text();
+		return eb_nickname_.get_text();
 	}
 	std::string get_password() {
-		return eb_password_.text();
+		return eb_password_.get_text();
 	}
 	bool registered() {
 		return cb_register_.get_state();

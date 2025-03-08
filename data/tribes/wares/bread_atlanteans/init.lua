@@ -1,6 +1,6 @@
 push_textdomain("tribes")
 
-dirname = path.dirname(__file__)
+local dirname = path.dirname(__file__)
 
 wl.Descriptions():new_ware_type {
    name = "atlanteans_bread",
@@ -11,7 +11,7 @@ wl.Descriptions():new_ware_type {
    animation_directory = dirname,
    animations = {
       idle = {
-         hotspot = { 9, 13 },
+         hotspot = { 9, 8 },
       },
    }
 }

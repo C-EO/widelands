@@ -1,6 +1,6 @@
 push_textdomain("tribes")
 
-dirname = path.dirname(__file__)
+local dirname = path.dirname(__file__)
 
 wl.Descriptions():new_worker_type {
    name = "barbarians_scout",
@@ -16,6 +16,9 @@ wl.Descriptions():new_worker_type {
 
    programs = {
       scout = {
+         -- steps from building to beginning of scouting: 2-18
+         -- min. worker time: 2 * 1.8 + 75 + 2 * 1.8 = 82.2 sec
+         -- max. worker time: 2 * (18 * 1.8 + 75) = 214.8 sec
          "scout=radius:15 duration:1m15s",
          "return"
       },

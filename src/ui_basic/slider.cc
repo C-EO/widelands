@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2002-2023 by the Widelands Development Team
+ * Copyright (C) 2002-2025 by the Widelands Development Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -54,6 +54,7 @@ namespace UI {
  * \param bar_size Length of the cursor move.
  */
 Slider::Slider(Panel* const parent,
+               const std::string& name,
                const int32_t x,
                const int32_t y,
                const uint32_t w,
@@ -70,6 +71,7 @@ Slider::Slider(Panel* const parent,
                const int32_t bar_size)
    : Panel(parent,
            style == SliderStyle::kFsMenu ? PanelStyle::kFsMenu : PanelStyle::kWui,
+           name,
            x,
            y,
            w,
@@ -312,6 +314,8 @@ bool Slider::handle_key(bool down, SDL_Keysym code) {
 		case ChangeType::kSetMin:
 			set_value(0);
 			return true;
+		default:
+			NEVER_HERE();
 		}
 
 		int32_t num = -1;
@@ -627,9 +631,8 @@ bool VerticalSlider::handle_mousepress(const uint8_t btn, int32_t x, int32_t y) 
 		cursor_pressed(y);
 		return true;
 	}
-	if (y >= get_y_gap() && y <= static_cast<int32_t>(get_h()) - get_y_gap() &&
-	    x >= get_x_gap() - 2 &&
-	    x < static_cast<int32_t>(get_w()) - get_x_gap() + 2) {  //  click on bar
+	if (y >= get_y_gap() && y <= get_h() - get_y_gap() && x >= get_x_gap() - 2 &&
+	    x < get_w() - get_x_gap() + 2) {  //  click on bar
 		bar_pressed(y, get_y_gap());
 		return true;
 	}
@@ -637,6 +640,7 @@ bool VerticalSlider::handle_mousepress(const uint8_t btn, int32_t x, int32_t y) 
 }
 
 DiscreteSlider::DiscreteSlider(Panel* const parent,
+                               const std::string& name,
                                const int32_t x,
                                const int32_t y,
                                const uint32_t w,
@@ -649,6 +653,7 @@ DiscreteSlider::DiscreteSlider(Panel* const parent,
                                const bool enabled)
    : Panel(parent,
            init_style == SliderStyle::kFsMenu ? PanelStyle::kFsMenu : PanelStyle::kWui,
+           name,
            x,
            y,
            w,
@@ -656,6 +661,7 @@ DiscreteSlider::DiscreteSlider(Panel* const parent,
            tooltip_text),
      style_(init_style),
      slider(this,
+            "discrete_slider_impl",
             // here, we take into account the h_gap introduced by HorizontalSlider
             w / (2 * labels_in.size()) - cursor_size / 2,
             0,

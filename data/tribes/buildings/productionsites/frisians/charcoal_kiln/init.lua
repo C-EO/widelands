@@ -1,6 +1,6 @@
 push_textdomain("tribes")
 
-dirname = path.dirname (__file__)
+local dirname = path.dirname (__file__)
 
 wl.Descriptions():new_productionsite_type {
    name = "frisians_charcoal_kiln",
@@ -62,9 +62,10 @@ wl.Descriptions():new_productionsite_type {
          -- TRANSLATORS: Completed/Skipped/Did not start producing coal because ...
          descname = _("producing coal"),
          actions = {
+            -- time total: 30.4 + 30 + 3.6 = 64 sec
             "return=skipped unless economy needs coal",
             "consume=log:3 clay",
-            "sleep=duration:30s",
+            "sleep=duration:30s400ms",
             "animate=working duration:30s",
             "produce=coal"
          },

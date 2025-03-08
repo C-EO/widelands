@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2002-2023 by the Widelands Development Team
+ * Copyright (C) 2002-2025 by the Widelands Development Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -25,8 +25,10 @@
 #include "base/macros.h"
 #include "base/wexception.h"
 #include "economy/economy.h"
+#include "economy/ferry_fleet.h"
 #include "economy/input_queue.h"
 #include "economy/request.h"
+#include "economy/ship_fleet.h"
 #include "economy/ware_instance.h"
 #include "economy/wares_queue.h"
 #include "economy/workers_queue.h"
@@ -35,7 +37,9 @@
 #include "logic/game.h"
 #include "logic/game_data_error.h"
 #include "logic/map.h"
+#include "logic/map_objects/checkstep.h"
 #include "logic/map_objects/descriptions.h"
+#include "logic/map_objects/findnode.h"
 #include "logic/map_objects/tribes/carrier.h"
 #include "logic/map_objects/tribes/soldier.h"
 #include "logic/map_objects/tribes/tribe_descr.h"
@@ -67,7 +71,7 @@ void parse_working_positions(const Descriptions& descriptions,
 			if (!descriptions.worker_exists(woi)) {
 				throw GameDataError("not a worker");
 			}
-			working_positions->push_back(std::make_pair(woi, amount));
+			working_positions->emplace_back(woi, amount);
 		} catch (const WException& e) {
 			throw GameDataError("%s=\"%d\": %s", worker_name.c_str(), amount, e.what());
 		}
@@ -139,7 +143,7 @@ ProductionSiteDescr::ProductionSiteDescr(const std::string& init_descname,
 							   "ware type '%s' was declared multiple times", ware_or_worker_name.c_str());
 						}
 					}
-					input_wares_.push_back(WareAmount(wareworker.second, amount));
+					input_wares_.emplace_back(wareworker.second, amount);
 				} break;
 				case WareWorker::wwWORKER: {
 					for (const auto& temp_inputs : input_workers()) {
@@ -148,8 +152,10 @@ ProductionSiteDescr::ProductionSiteDescr(const std::string& init_descname,
 							                    ware_or_worker_name.c_str());
 						}
 					}
-					input_workers_.push_back(WareAmount(wareworker.second, amount));
+					input_workers_.emplace_back(wareworker.second, amount);
 				} break;
+				default:
+					NEVER_HERE();
 				}
 			} catch (const std::exception& e) {
 				throw GameDataError(
@@ -287,11 +293,32 @@ IMPLEMENTATION
 ProductionSite::ProductionSite(const ProductionSiteDescr& ps_descr)
    : Building(ps_descr), working_positions_(ps_descr.nr_working_positions()) {
 	format_statistics_string();
+
+	if (descr().has_ship_fleet_check() || descr().has_ferry_fleet_check()) {
+		field_terrain_changed_subscriber_ = Notifications::subscribe<NoteFieldTerrainChanged>(
+		   [this](const NoteFieldTerrainChanged& note) {
+			   if (note.action == NoteFieldTerrainChanged::Change::kTerrain &&
+			       owner().egbase().map().calc_distance(note.fc, get_position()) <=
+			          descr().workarea_info().rbegin()->first + 1) {
+				   init_yard_interfaces(get_owner()->egbase());
+			   }
+		   });
+	}
 }
 
 void ProductionSite::load_finish(EditorGameBase& egbase) {
 	Building::load_finish(egbase);
 	format_statistics_string();
+}
+
+void ProductionSite::postload(EditorGameBase& egbase) {
+	Building::postload(egbase);
+
+	// TODO(Nordfriese): This is only needed for v1.1 savegame compatibility
+	if ((descr().has_ship_fleet_check() && ship_fleet_interfaces_.empty()) ||
+	    (descr().has_ferry_fleet_check() && ferry_fleet_interfaces_.empty())) {
+		init_yard_interfaces(egbase);
+	}
 }
 
 /**
@@ -343,8 +370,8 @@ void ProductionSite::update_statistics_string(std::string* s) {
 	if (nr_xp_requests > 0) {
 		*s = StyleManager::color_tag(
 		   (nr_xp_requests == 1 ?
-             owner().tribe().get_productionsite_experienced_worker_missing_string() :
-             owner().tribe().get_productionsite_experienced_workers_missing_string()),
+		       owner().tribe().get_productionsite_experienced_worker_missing_string() :
+		       owner().tribe().get_productionsite_experienced_workers_missing_string()),
 		   g_style_manager->building_statistics_style().low_color());
 		return;
 	}
@@ -352,7 +379,7 @@ void ProductionSite::update_statistics_string(std::string* s) {
 	if (nr_requests > 0) {
 		*s = StyleManager::color_tag(
 		   (nr_requests == 1 ? owner().tribe().get_productionsite_worker_missing_string() :
-                             owner().tribe().get_productionsite_workers_missing_string()),
+		                       owner().tribe().get_productionsite_workers_missing_string()),
 		   g_style_manager->building_statistics_style().low_color());
 		return;
 	}
@@ -360,7 +387,7 @@ void ProductionSite::update_statistics_string(std::string* s) {
 	if (nr_coming > 0) {
 		*s = StyleManager::color_tag(
 		   (nr_coming == 1 ? owner().tribe().get_productionsite_worker_coming_string() :
-                           owner().tribe().get_productionsite_workers_coming_string()),
+		                     owner().tribe().get_productionsite_workers_coming_string()),
 		   g_style_manager->building_statistics_style().medium_color());
 		return;
 	}
@@ -435,8 +462,8 @@ InputQueue& ProductionSite::inputqueue(DescriptionIndex const wi,
 	throw wexception("%s (%u) has no InputQueue for %s %u: %s", descr().name().c_str(), serial(),
 	                 type == WareWorker::wwWARE ? "ware" : "worker", wi,
 	                 type == WareWorker::wwWARE ?
-                       owner().tribe().get_ware_descr(wi)->name().c_str() :
-                       owner().tribe().get_worker_descr(wi)->name().c_str());
+	                    owner().tribe().get_ware_descr(wi)->name().c_str() :
+	                    owner().tribe().get_worker_descr(wi)->name().c_str());
 }
 
 /**
@@ -453,7 +480,7 @@ void ProductionSite::format_statistics_string() {
 	   format(_("%i%%"), percent),
 	   (percent < 33) ? g_style_manager->building_statistics_style().low_color() :
 	   (percent < 66) ? g_style_manager->building_statistics_style().medium_color() :
-                       g_style_manager->building_statistics_style().high_color());
+	                    g_style_manager->building_statistics_style().high_color());
 
 	if (0 < percent && percent < 100) {
 		RGBColor color = g_style_manager->building_statistics_style().high_color();
@@ -512,6 +539,8 @@ bool ProductionSite::init(EditorGameBase& egbase) {
 		}
 	}
 
+	init_yard_interfaces(egbase);
+
 	if (upcast(Game, game, &egbase)) {
 		try_start_working(*game);
 	}
@@ -554,6 +583,8 @@ void ProductionSite::set_economy(Economy* const e, WareWorker type) {
  * Cleanup after a production site is removed
  */
 void ProductionSite::cleanup(EditorGameBase& egbase) {
+	field_terrain_changed_subscriber_.reset();
+
 	for (uint32_t i = descr().nr_working_positions(); i != 0u;) {
 		--i;
 		delete working_positions_.at(i).worker_request;
@@ -575,6 +606,13 @@ void ProductionSite::cleanup(EditorGameBase& egbase) {
 		delete iq;
 	}
 	input_queues_.clear();
+
+	while (!ship_fleet_interfaces_.empty()) {
+		ship_fleet_interfaces_.front()->remove(egbase);
+	}
+	while (!ferry_fleet_interfaces_.empty()) {
+		ferry_fleet_interfaces_.front()->remove(egbase);
+	}
 
 	Building::cleanup(egbase);
 }
@@ -894,7 +932,7 @@ bool ProductionSite::fetch_from_flag(Game& game) {
 void ProductionSite::log_general_info(const EditorGameBase& egbase) const {
 	Building::log_general_info(egbase);
 
-	molog(egbase.get_gametime(), "is_stopped: %u\n", static_cast<int>(is_stopped_));
+	molog(egbase.get_gametime(), "is_stopped: %s\n", is_stopped_ ? "true" : "false");
 	molog(egbase.get_gametime(), "main_worker: %i\n", main_worker_);
 }
 
@@ -1134,6 +1172,8 @@ void ProductionSite::program_end(Game& game, ProgramResult const result) {
 	case ProgramResult::kNone:
 		failed_skipped_programs_.erase(program_name);
 		break;
+	default:
+		NEVER_HERE();
 	}
 
 	program_timer_ = true;
@@ -1179,6 +1219,83 @@ void ProductionSite::notify_player(Game& game, uint8_t minutes, FailNotification
 
 void ProductionSite::unnotify_player() {
 	set_production_result("");
+}
+
+void ProductionSite::init_yard_interfaces(EditorGameBase& egbase) {
+	const Map& map = egbase.map();
+
+	while (!ship_fleet_interfaces_.empty()) {
+		ship_fleet_interfaces_.front()->remove(egbase);
+	}
+	while (!ferry_fleet_interfaces_.empty()) {
+		ferry_fleet_interfaces_.front()->remove(egbase);
+	}
+
+	if (descr().has_ship_fleet_check()) {
+		std::vector<Coords> result;
+		// 10 is a custom value to make sure the "ocean" is at least 10 nodes big.
+		constexpr int kMinOceanSize = 10;
+		map.find_reachable_fields(
+		   egbase,
+		   Area<FCoords>(map.get_fcoords(get_position()), descr().workarea_info().rbegin()->first),
+		   &result, CheckStepDefault(MOVECAPS_WALK), FindNodeShore(kMinOceanSize));
+
+		for (const Coords& coords : result) {
+			ship_fleet_interfaces_.push_back(ShipFleetYardInterface::create(egbase, *this, coords));
+		}
+
+		if (ship_fleet_interfaces_.empty()) {
+			if (upcast(Game, game, &egbase)) {
+				send_message(*game, Message::Type::kEconomy, pgettext("building", "No Shore"),
+				             descr().icon_filename(), _("Shipyard Without Shore"),
+				             _("Your shipyard has not been built close enough to a shore. It will not "
+				               "be able to build ships."));
+			}
+		}
+	}
+
+	if (descr().has_ferry_fleet_check()) {
+		std::vector<Coords> result;
+		map.find_reachable_fields(
+		   egbase,
+		   Area<FCoords>(map.get_fcoords(get_position()), descr().workarea_info().rbegin()->first),
+		   &result, CheckStepDefault(MOVECAPS_WALK), FindNodeFerry(0));
+
+		for (const Coords& coords : result) {
+			ferry_fleet_interfaces_.push_back(FerryFleetYardInterface::create(egbase, *this, coords));
+		}
+
+		if (ferry_fleet_interfaces_.empty()) {
+			if (upcast(Game, game, &egbase)) {
+				send_message(*game, Message::Type::kEconomy, pgettext("building", "No Shore"),
+				             descr().icon_filename(), _("Ferry Yard Without Shore"),
+				             _("Your ferry yard has not been built close enough to a shore. It will "
+				               "not be able to build ferries."));
+			}
+		}
+	}
+}
+
+void ProductionSite::remove_fleet_interface(EditorGameBase& /*egbase*/,
+                                            const ShipFleetYardInterface* interface) {
+	auto it = std::find(ship_fleet_interfaces_.begin(), ship_fleet_interfaces_.end(), interface);
+	if (it == ship_fleet_interfaces_.end()) {
+		throw wexception("Attempt to remove unknown ship fleet interface %u",
+		                 interface == nullptr ? 0 : interface->serial());
+	}
+	*it = ship_fleet_interfaces_.back();
+	ship_fleet_interfaces_.pop_back();
+}
+
+void ProductionSite::remove_fleet_interface(EditorGameBase& /*egbase*/,
+                                            const FerryFleetYardInterface* interface) {
+	auto it = std::find(ferry_fleet_interfaces_.begin(), ferry_fleet_interfaces_.end(), interface);
+	if (it == ferry_fleet_interfaces_.end()) {
+		throw wexception("Attempt to remove unknown ferry fleet interface %u",
+		                 interface == nullptr ? 0 : interface->serial());
+	}
+	*it = ferry_fleet_interfaces_.back();
+	ferry_fleet_interfaces_.pop_back();
 }
 
 std::unique_ptr<const BuildingSettings> ProductionSite::create_building_settings() const {

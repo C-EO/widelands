@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2002-2023 by the Widelands Development Team
+ * Copyright (C) 2002-2025 by the Widelands Development Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -18,11 +18,11 @@
 
 #include "ui_fsmenu/login_box.h"
 
+#include "base/crypto.h"
 #include "base/i18n.h"
 #include "graphic/font_handler.h"
 #include "network/internet_gaming.h"
 #include "network/internet_gaming_protocol.h"
-#include "third_party/sha1/sha1.h"
 #include "ui_basic/button.h"
 #include "ui_basic/messagebox.h"
 #include "ui_fsmenu/main.h"
@@ -36,21 +36,33 @@ LoginBox::LoginBox(MainMenu& parent, UI::UniqueWindow::Registry& r)
    : UI::UniqueWindow(
         &parent, UI::WindowStyle::kFsMenu, "login_box", &r, 500, 290, _("Online Game Settings")),
      fsmm_(parent),
-     main_box_(this, UI::PanelStyle::kFsMenu, 0, 0, UI::Box::Vertical),
-     hbox_(&main_box_, UI::PanelStyle::kFsMenu, 0, 0, UI::Box::Horizontal),
-     buttons_box_(&main_box_, UI::PanelStyle::kFsMenu, 0, 0, UI::Box::Horizontal),
-     vbox1_(&hbox_, UI::PanelStyle::kFsMenu, 0, 0, UI::Box::Vertical),
-     vbox2_(&hbox_, UI::PanelStyle::kFsMenu, 0, 0, UI::Box::Vertical),
+     main_box_(this, UI::PanelStyle::kFsMenu, "main_box", 0, 0, UI::Box::Vertical),
+     hbox_(&main_box_, UI::PanelStyle::kFsMenu, "hbox", 0, 0, UI::Box::Horizontal),
+     buttons_box_(&main_box_, UI::PanelStyle::kFsMenu, "buttons_box", 0, 0, UI::Box::Horizontal),
+     vbox1_(&hbox_, UI::PanelStyle::kFsMenu, "vbox_1", 0, 0, UI::Box::Vertical),
+     vbox2_(&hbox_, UI::PanelStyle::kFsMenu, "vbox_2", 0, 0, UI::Box::Vertical),
      b_login_(&buttons_box_, "login", 0, 0, 200, 28, UI::ButtonStyle::kFsMenuPrimary, _("Save")),
      b_cancel_(
         &buttons_box_, "cancel", 0, 0, 200, 28, UI::ButtonStyle::kFsMenuSecondary, _("Cancel")),
-     eb_nickname_(&vbox2_, 0, 0, 330, UI::PanelStyle::kFsMenu),
-     eb_password_(&vbox2_, 0, 0, 330, UI::PanelStyle::kFsMenu),
-     cb_register_(
-        &main_box_, UI::PanelStyle::kFsMenu, Vector2i(0, 0), _("Log in to a registered account.")),
-     ta_nickname_(&vbox1_, UI::PanelStyle::kFsMenu, UI::FontStyle::kFsMenuLabel, _("Nickname:")),
-     ta_password_(&vbox1_, UI::PanelStyle::kFsMenu, UI::FontStyle::kFsMenuLabel, _("Password:")),
+     eb_nickname_(&vbox2_, "nickname", 0, 0, 330, UI::PanelStyle::kFsMenu),
+     eb_password_(&vbox2_, "password", 0, 0, 330, UI::PanelStyle::kFsMenu),
+     cb_register_(&main_box_,
+                  UI::PanelStyle::kFsMenu,
+                  "registered",
+                  Vector2i(0, 0),
+                  _("Log in to a registered account.")),
+     ta_nickname_(&vbox1_,
+                  UI::PanelStyle::kFsMenu,
+                  "label_nickname",
+                  UI::FontStyle::kFsMenuLabel,
+                  _("Nickname:")),
+     ta_password_(&vbox1_,
+                  UI::PanelStyle::kFsMenu,
+                  "label_password",
+                  UI::FontStyle::kFsMenuLabel,
+                  _("Password:")),
      register_account_(&main_box_,
+                       "labeö_registered",
                        0,
                        0,
                        0,
@@ -135,15 +147,18 @@ void LoginBox::think() {
  * called, if "login" is pressed.
  */
 void LoginBox::clicked_ok() {
+	if (!b_login_.enabled()) {
+		return;
+	}
 	if (cb_register_.get_state()) {
 		if (check_password()) {
-			set_config_string("nickname", eb_nickname_.text());
+			set_config_string("nickname", eb_nickname_.get_text());
 			set_config_bool("registered", true);
 			fsmm_.internet_login_callback();
 			die();
 		}
 	} else {
-		set_config_string("nickname", eb_nickname_.text());
+		set_config_string("nickname", eb_nickname_.get_text());
 		set_config_bool("registered", false);
 		set_config_string("password_sha1", "");
 		fsmm_.internet_login_callback();
@@ -198,27 +213,29 @@ void LoginBox::verify_input() {
 	eb_password_.set_tooltip("");
 	eb_nickname_.set_warning(false);
 
-	if (eb_nickname_.text().empty()) {
+	if (eb_nickname_.get_text().empty()) {
 		eb_nickname_.set_warning(true);
 		eb_nickname_.set_tooltip(_("Please enter a nickname!"));
 		b_login_.set_enabled(false);
-	} else if (!InternetGaming::ref().valid_username(eb_nickname_.text())) {
+	} else if (!InternetGaming::ref().valid_username(eb_nickname_.get_text())) {
 		eb_nickname_.set_warning(true);
 		eb_nickname_.set_tooltip(_("Enter a valid nickname. This value may contain only "
 		                           "English letters, numbers, and @ . + - _ characters."));
 		b_login_.set_enabled(false);
 	}
 
-	if (eb_password_.text().empty() && cb_register_.get_state()) {
+	if (eb_password_.get_text().empty() && cb_register_.get_state()) {
 		eb_password_.set_tooltip(_("Please enter your password!"));
 		b_login_.set_enabled(false);
 	}
 
-	if (eb_password_.has_focus() && eb_password_.text() == get_config_string("password_sha1", "")) {
+	if (eb_password_.has_focus() &&
+	    eb_password_.get_text() == get_config_string("password_sha1", "")) {
 		eb_password_.set_text("");
 	}
 
-	if (cb_register_.get_state() && eb_password_.text() == get_config_string("password_sha1", "")) {
+	if (cb_register_.get_state() &&
+	    eb_password_.get_text() == get_config_string("password_sha1", "")) {
 		b_login_.set_enabled(false);
 	}
 }
@@ -228,7 +245,7 @@ bool LoginBox::check_password() {
 	// Try to connect to the metaserver
 	const std::string& meta = get_config_string("metaserver", INTERNET_GAMING_METASERVER);
 	uint32_t port = get_config_natural("metaserverport", kInternetGamingPort);
-	std::string password = crypto::sha1(eb_password_.text());
+	std::string password = crypto::sha1(eb_password_.get_text());
 
 	if (!InternetGaming::ref().check_password(get_nickname(), password, meta, port)) {
 		// something went wrong -> show the error message

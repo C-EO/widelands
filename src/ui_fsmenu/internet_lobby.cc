@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2023 by the Widelands Development Team
+ * Copyright (C) 2004-2025 by the Widelands Development Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -17,6 +17,8 @@
  */
 
 #include "ui_fsmenu/internet_lobby.h"
+
+#include <memory>
 
 #include "base/i18n.h"
 #include "base/random.h"
@@ -56,13 +58,14 @@ InternetLobby::InternetLobby(MenuCapsule& fsmm,
      // Left column content
      label_clients_online_(&left_column_box_,
                            UI::PanelStyle::kFsMenu,
+                           "label_clients",
                            UI::FontStyle::kFsMenuLabel,
                            0,
                            0,
                            0,
                            0,
                            _("Clients online:")),
-     clientsonline_table_(&left_column_box_, 0, 0, 0, 0, UI::PanelStyle::kFsMenu),
+     clientsonline_table_(&left_column_box_, "table", 0, 0, 0, 0, UI::PanelStyle::kFsMenu),
      chat_(
         &left_column_box_,
         [](int /* unused */) {
@@ -73,18 +76,21 @@ InternetLobby::InternetLobby(MenuCapsule& fsmm,
         0,
         0,
         InternetGaming::ref(),
+        &g_chat_sent_history,
         UI::PanelStyle::kFsMenu),
 
      // Right column content
      label_opengames_(&right_column_content_box_,
                       UI::PanelStyle::kFsMenu,
+                      "label_opengames",
                       UI::FontStyle::kFsMenuLabel,
                       0,
                       0,
                       0,
                       0,
                       _("Open Games:")),
-     opengames_list_(&right_column_content_box_, 0, 0, 0, 0, UI::PanelStyle::kFsMenu),
+     opengames_list_(
+        &right_column_content_box_, "list_opengames", 0, 0, 0, 0, UI::PanelStyle::kFsMenu),
      joingame_(&right_column_content_box_,
                "join_game",
                0,
@@ -95,13 +101,14 @@ InternetLobby::InternetLobby(MenuCapsule& fsmm,
                _("Join this game")),
      servername_label_(&right_column_content_box_,
                        UI::PanelStyle::kFsMenu,
+                       "label_servername",
                        UI::FontStyle::kFsMenuLabel,
                        0,
                        0,
                        0,
                        0,
                        _("Name of your server:")),
-     servername_(&right_column_content_box_, 0, 0, 0, UI::PanelStyle::kFsMenu),
+     servername_(&right_column_content_box_, "servername", 0, 0, 0, UI::PanelStyle::kFsMenu),
      hostgame_(&right_column_content_box_,
                "host_game",
                0,
@@ -137,9 +144,9 @@ InternetLobby::InternetLobby(MenuCapsule& fsmm,
 	right_column_content_box_.add(&hostgame_, UI::Box::Resizing::kFullSize);
 	right_column_content_box_.add_space(0);
 	right_column_content_box_.add(
-	   new UI::MultilineTextarea(&right_column_content_box_, 0, 0, 0, 0, UI::PanelStyle::kFsMenu,
-	                             AddOns::list_game_relevant_addons(), UI::Align::kLeft,
-	                             UI::MultilineTextarea::ScrollMode::kNoScrolling),
+	   new UI::MultilineTextarea(&right_column_content_box_, "label_addons", 0, 0, 0, 0,
+	                             UI::PanelStyle::kFsMenu, AddOns::list_game_relevant_addons(),
+	                             UI::Align::kLeft, UI::MultilineTextarea::ScrollMode::kNoScrolling),
 	   UI::Box::Resizing::kFullSize);
 	right_column_content_box_.add_inf_space();
 
@@ -426,7 +433,7 @@ void InternetLobby::change_servername() {
 	const std::vector<InternetGame>* games = InternetGaming::ref().games();
 	if (games != nullptr) {
 		for (const InternetGame& game : *games) {
-			if (game.name == servername_.text()) {
+			if (game.name == servername_.get_text()) {
 				hostgame_.set_enabled(false);
 				servername_.set_warning(true);
 				servername_.set_tooltip(
@@ -457,6 +464,10 @@ bool InternetLobby::wait_for_ip() {
 
 /// called when the 'join game' button was clicked
 void InternetLobby::clicked_joingame() {
+	if (!joingame_.enabled()) {
+		return;
+	}
+
 	if (opengames_list_.has_selection()) {
 		InternetGaming::ref().join_game(opengames_list_.get_selected().name);
 
@@ -466,9 +477,9 @@ void InternetLobby::clicked_joingame() {
 		const std::pair<NetAddress, NetAddress>& ips = InternetGaming::ref().ips();
 
 		try {
-			running_game_.reset(new GameClient(capsule_, running_game_, ips,
-			                                   InternetGaming::ref().get_local_clientname(), true,
-			                                   opengames_list_.get_selected().name));
+			running_game_ = std::make_shared<GameClient>(capsule_, running_game_, ips,
+			                                             InternetGaming::ref().get_local_clientname(),
+			                                             true, opengames_list_.get_selected().name);
 		} catch (const std::exception& e) {
 			running_game_.reset();
 			UI::WLMessageBox mbox(&capsule_.menu(), UI::WindowStyle::kFsMenu, _("Network Error"),
@@ -483,9 +494,13 @@ void InternetLobby::clicked_joingame() {
 
 /// called when the 'host game' button was clicked
 void InternetLobby::clicked_hostgame() {
+	if (!hostgame_.enabled()) {
+		return;
+	}
+
 	// Save selected servername as default for next time and during that take care that the name is
 	// not empty.
-	std::string servername_ui = servername_.text();
+	std::string servername_ui = servername_.get_text();
 
 	const std::vector<InternetGame>* games = InternetGaming::ref().games();
 	if (games != nullptr) {
@@ -525,9 +540,8 @@ void InternetLobby::clicked_hostgame() {
 
 	// Start our relay host
 	try {
-		running_game_.reset(new GameHost(&capsule_, running_game_,
-		                                 InternetGaming::ref().get_local_clientname(), tribeinfos_,
-		                                 true));
+		running_game_ = std::make_shared<GameHost>(
+		   &capsule_, running_game_, InternetGaming::ref().get_local_clientname(), tribeinfos_, true);
 	} catch (const std::exception& e) {
 		running_game_.reset();
 		UI::WLMessageBox mbox(&capsule_.menu(), UI::WindowStyle::kFsMenu, _("Network Error"),

@@ -1,6 +1,6 @@
 push_textdomain("scenario_fri03.wmf")
 
-dirname = "campaigns/fri03.wmf/" .. path.dirname (__file__)
+local dirname = "campaigns/fri03.wmf/" .. path.dirname (__file__)
 
 wl.Descriptions():new_warehouse_type {
    name = "empire_port_large",
@@ -26,6 +26,7 @@ wl.Descriptions():new_warehouse_type {
 
    conquers = 11,
    heal_per_second = 170,
+   max_garrison = 20,
 }
 
 pop_textdomain()

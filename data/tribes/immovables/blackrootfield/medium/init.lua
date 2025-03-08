@@ -1,6 +1,6 @@
 push_textdomain("tribes")
 
-dirname = path.dirname(__file__)
+local dirname = path.dirname(__file__)
 
 wl.Descriptions():new_immovable_type {
    name = "blackrootfield_medium",
@@ -18,7 +18,7 @@ wl.Descriptions():new_immovable_type {
    animation_directory = dirname,
    animations = {
       idle = {
-         hotspot = { 26, 30 },
+         hotspot = { 36, 49 },
       },
    }
 }

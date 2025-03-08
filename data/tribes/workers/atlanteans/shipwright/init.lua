@@ -1,6 +1,6 @@
 push_textdomain("tribes")
 
-dirname = path.dirname(__file__)
+local dirname = path.dirname(__file__)
 
 wl.Descriptions():new_worker_type {
    name = "atlanteans_shipwright",
@@ -17,6 +17,7 @@ wl.Descriptions():new_worker_type {
 
    programs = {
       buildship = {
+         -- worker time: 0.5 + 5 = 5.5 sec
          "walk=object-or-coords",
          "plant=attrib:atlanteans_shipconstruction unless object",
          "playsound=sound/sawmill/sawmill priority:80% allow_multiple",
@@ -25,11 +26,10 @@ wl.Descriptions():new_worker_type {
          "animate=idle duration:5s",
          "return"
       },
-      buildferry_1 = {
-         -- checks whether water is available
-         "findspace=size:swim radius:5 ferry",
-      },
-      buildferry_2 = {
+      buildferry = {
+         -- steps from building to water: 2-8
+         -- min. worker time: 2 * 2 * 1.8 + 10 = 17.2 sec
+         -- max. worker time: 2 * 8 * 1.8 + 10 = 38.8 sec
          "findspace=size:swim radius:5 ferry",
          "walk=coords",
          "animate=idle duration:10s",

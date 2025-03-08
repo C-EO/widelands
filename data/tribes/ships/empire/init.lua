@@ -1,6 +1,6 @@
 push_textdomain("tribes")
 
-dirname = path.dirname(__file__)
+local dirname = path.dirname(__file__)
 
 wl.Descriptions():new_ship_type {
    name = "empire_ship",
@@ -11,21 +11,28 @@ wl.Descriptions():new_ship_type {
    capacity = 30,
    vision_range = 4,
 
+   hitpoints    = 50000,
+   min_attack   =   100,
+   max_attack   = 10000,
+   defense         =  5,
+   attack_accuracy = 60,
+   heal_per_second = 100,
+
    spritesheets = {
       idle = {
          fps = 10,
          frames = 40,
-         rows = 7,
-         columns = 6,
-         hotspot = { 88, 90 }
+         rows = 4,
+         columns = 10,
+         hotspot = { 83, 95 }
       },
       sail = {
          fps = 10,
          frames = 40,
-         rows = 7,
-         columns = 6,
+         rows = 4,
+         columns = 10,
          directional = true,
-         hotspot = { 111, 92 }
+         hotspot = { 107, 99 }
       },
    },
 

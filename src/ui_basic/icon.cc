@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2023 by the Widelands Development Team
+ * Copyright (C) 2010-2025 by the Widelands Development Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -18,6 +18,8 @@
 
 #include "ui_basic/icon.h"
 
+#include <algorithm>
+
 #include "graphic/image.h"
 #include "graphic/rendertarget.h"
 
@@ -25,12 +27,13 @@ namespace UI {
 
 Icon::Icon(Panel* const parent,
            PanelStyle s,
+           const std::string& name,
            const int32_t x,
            const int32_t y,
            const int32_t w,
            const int32_t h,
            const Image* picture_id)
-   : Panel(parent, s, x, y, w, h),
+   : Panel(parent, s, name, x, y, w, h),
      pic_(picture_id),
      draw_frame_(false),
      grey_out_color_(191, 191, 191, 191),
@@ -39,8 +42,8 @@ Icon::Icon(Panel* const parent,
 	set_thinks(false);
 }
 
-Icon::Icon(Panel* const parent, PanelStyle s, const Image* picture_id)
-   : Icon(parent, s, 0, 0, picture_id->width(), picture_id->height(), picture_id) {
+Icon::Icon(Panel* const parent, PanelStyle s, const std::string& name, const Image* picture_id)
+   : Icon(parent, s, name, 0, 0, picture_id->width(), picture_id->height(), picture_id) {
 }
 
 void Icon::set_icon(const Image* picture_id) {
@@ -62,9 +65,8 @@ void Icon::draw(RenderTarget& dst) {
 	if (pic_ != nullptr) {
 		const int available_width = draw_frame_ ? get_w() - 2 : get_w();
 		const int available_height = draw_frame_ ? get_h() - 2 : get_h();
-		const float scale =
-		   std::min(1.f, std::min(static_cast<float>(available_width) / pic_->width(),
-		                          static_cast<float>(available_height) / pic_->height()));
+		const float scale = std::min({1.f, static_cast<float>(available_width) / pic_->width(),
+		                              static_cast<float>(available_height) / pic_->height()});
 		// We need to be pixel perfect, so we use ints.
 		const int width = scale * pic_->width();
 		const int height = scale * pic_->height();
@@ -73,11 +75,10 @@ void Icon::draw(RenderTarget& dst) {
 		if (grey_out_) {
 			dst.blitrect_scale_monochrome(
 			   Rectf(draw_frame_ ? x + 1 : x, draw_frame_ ? y + 1 : y, width, height), pic_,
-			   Recti(0, 0, pic_->width(), pic_->height()), grey_out_color_);
+			   pic_->rect(), grey_out_color_);
 		} else {
 			dst.blitrect_scale(Rectf(draw_frame_ ? x + 1 : x, draw_frame_ ? y + 1 : y, width, height),
-			                   pic_, Recti(0, 0, pic_->width(), pic_->height()), 1.,
-			                   BlendMode::UseAlpha);
+			                   pic_, pic_->rect(), 1., BlendMode::UseAlpha);
 		}
 		if (draw_frame_) {
 			dst.draw_rect(Recti(x, y, width + 2, height + 2), framecolor_);
